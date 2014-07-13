@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<decorators defaultdir="/developMode">
+  <decorator name="base" page="develop.jsp">
+    <pattern>/*.jsp</pattern>               
+  </decorator>
+  
+  <excludes>
+
+    <pattern>/rest/**</pattern>
+
+  </excludes>
+</decorators>
