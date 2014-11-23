@@ -32,6 +32,10 @@ public class DBDataResource {
 	@ResponseBody
 	public Map execSql(@PathVariable("dbName") String dbName,
 			@RequestParam(value="sql") String sql) throws SQLException {
-		return dbDataService.update(dbName, sql);
+		String[] sqls = sql.split("(;\n)");
+		for(int i =0; i < sqls.length; i++){
+			sqls[i] = sqls[i].replaceAll(";$", ""); 
+		}
+		return dbDataService.update(dbName, sqls);
 	}
 }

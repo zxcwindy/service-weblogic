@@ -7,11 +7,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DataBaseUtil {
-	private static final String DATABASE_REGEX=".*(db2|oracle|mysql|sql server|hive).*";
+	private static final String DATABASE_REGEX=".*(db2|oracle|mysql|sql server|hive|asterdata).*";
 	
 	public static String getDBProduct(Connection conn){
 		DatabaseMetaData metaData = null;
 		String result = "";
+		
 		try {
 			metaData = conn.getMetaData();
 			String driverName = metaData.getDriverName();
@@ -21,7 +22,10 @@ public class DataBaseUtil {
 			if (m.matches()) {
 				result = m.group(1).replace(" ", "");
 			}			
-		} catch (SQLException e) {
+			if("".equals(result)){
+				result="asterdata";
+			}
+		} catch (SQLException e) {			
 			e.printStackTrace();			
 		}	
 		return result;

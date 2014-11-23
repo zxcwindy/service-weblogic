@@ -15,4 +15,6 @@ public interface DBDataService<T> {
 	T query(String dbName,String sql, Object... params) throws SQLException;
 	
 	T queryTableNames(String dbName, Map<String,Object> dataMap) throws SQLException;
+	
+	T update(String dbName, String[] sqls) throws SQLException;
 }

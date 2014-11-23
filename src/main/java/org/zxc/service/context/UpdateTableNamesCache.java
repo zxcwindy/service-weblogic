@@ -3,7 +3,6 @@ package org.zxc.service.context;
 import java.util.List;
 import java.util.Map;
 
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -28,7 +27,7 @@ public class UpdateTableNamesCache implements Runnable{
 	private static BeanFactory beanFactory = null;
 
 	@SuppressWarnings("unchecked")
-	public void run() {		
+	public void run() {	
 		Map<String, Object> resultMap = null;
 		try {			
 			resultMap = dbDataService.queryTableNames(dbName, null);
@@ -37,6 +36,7 @@ public class UpdateTableNamesCache implements Runnable{
 		} catch (Exception e) {
 			cacheContext.resetUpdate(dbName);
 			e.printStackTrace();
+			throw new RuntimeException(e.getMessage());
 		}
 	}
 

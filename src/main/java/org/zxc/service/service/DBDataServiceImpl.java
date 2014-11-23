@@ -2,6 +2,7 @@ package org.zxc.service.service;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,26 @@ public class DBDataServiceImpl implements DBDataService<Map> {
 	private Map getResultMap(int num){
 		Map<String,Object> result = new HashMap<String,Object>();
 		result.put("result", num);
+		return result;
+	}
+	
+	@Override
+	public Map update(String dbName, String[] sqls) {
+		Map<String,Object> result = new HashMap<String,Object>();		
+		int[] resultNums = new int[sqls.length];
+		for(int i = 0; i < resultNums.length; i++){
+			try {
+				resultNums[i] = runner.update(pool.getConnection(dbName),sqls[i]);
+			} catch (SQLException e) {
+				Map<String,Object> errorMap = new HashMap<String,Object>();
+				errorMap.put("success", Arrays.copyOf(resultNums, i));
+				errorMap.put("error-sql", " execute error  ->" +sqls[i] );
+				errorMap.put("error-result", e.getMessage() );
+				result.put("result", errorMap);
+				return result;
+			}
+		}
+		result.put("result", resultNums);
 		return result;
 	}
 }

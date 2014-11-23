@@ -10,7 +10,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.zxc.service.domain.DBTable;
 import org.zxc.service.service.DBMetaService;
@@ -26,11 +25,11 @@ public class DBMetaResource {
 	@RequestMapping(value= "getDetail/{dbName}/{tableName:.+}",method = RequestMethod.GET)
 	@ResponseBody
 	public DBTable findTable(@PathVariable("dbName") String dbName,
-			@RequestParam("tableName") String tableName) {
+			@PathVariable("tableName") String tableName) {
 		return dbMetaService.findTable(dbName,parseTable(tableName));
 	}
 
-	@RequestMapping(value="{dbName}/{tableName}",method = RequestMethod.GET)
+	@RequestMapping(value="{dbName}/{tableName:.+}",method = RequestMethod.GET)
 	@ResponseBody
 	public List<String> findTableNames(@PathVariable("dbName") String dbName,
 			@PathVariable("tableName") String tableName) throws SQLException {
@@ -54,7 +53,7 @@ public class DBMetaResource {
 		return dbTable.getCreateTableSql();
 	}
 
-	
+
 	@RequestMapping(value="getSelectSql/{dbName}/{tableName:.+}",method = RequestMethod.GET)
 	@ResponseBody
 	public String getSelectSql(@PathVariable("dbName") String dbName,
@@ -62,7 +61,7 @@ public class DBMetaResource {
 		DBTable dbTable = dbMetaService.findTable(dbName,parseTable(tableName));
 		return dbTable.getSelectSql();
 	}
-	
+
 	@RequestMapping(value="getColumnNames/{dbName}/{tableName:.+}",method = RequestMethod.GET)
 	@ResponseBody
 	public String getColumnNames(@PathVariable("dbName") String dbName,

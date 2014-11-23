@@ -1,27 +1,40 @@
 package org.zxc.service.context;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.stereotype.Component;
 import org.zxc.service.cache.TableCache;
 
 
 @Component
-public class TableNamesCacheContext {
-	
-	@Autowired
-	UpdateTableNamesCache cache;
+public class TableNamesCacheContext extends ApplicationObjectSupport{
 
 	private ScheduledExecutorService scheduler = Executors
 			.newScheduledThreadPool(10);
+	
+	private static final Properties INTERVAL_PRO = new Properties();
+	
+	private static final String INTERVAL_SUFFIX="-interval";
+	
+	static{
+		try {
+			INTERVAL_PRO.load(TableNamesCacheContext.class.getResourceAsStream("/interval.properties"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 	private volatile Map<String, TableCache> cacheMap = new Hashtable<String, TableCache>();
 	
@@ -32,9 +45,11 @@ public class TableNamesCacheContext {
 		
 		if (isUpdateMap.get(dbName) == null) {						
 			synchronized (isUpdateMap) {
-				if(isUpdateMap.get(dbName) == null){										
+				if(isUpdateMap.get(dbName) == null){			
+					UpdateTableNamesCache cache = this.getApplicationContext().getBean(UpdateTableNamesCache.class);	
 					cache.setDbName(dbName);
-					scheduler.scheduleAtFixedRate(cache, 0, 30, TimeUnit.SECONDS);
+					int interval = INTERVAL_PRO.getProperty(dbName+INTERVAL_SUFFIX) == null?30:Integer.valueOf(INTERVAL_PRO.getProperty(dbName+INTERVAL_SUFFIX));					
+					scheduler.scheduleAtFixedRate(cache, 0, interval, TimeUnit.SECONDS);
 					isUpdateMap.put(dbName, true);
 				}
 			}			
