@@ -26,7 +26,7 @@
     <properties>
         <target.java.version>1.6</target.java.version>
         <project.encoding>utf-8</project.encoding>
-        <org.springframework.version>3.1.1.RELEASE</org.springframework.version>                
+        <org.springframework.version>4.0.6.RELEASE</org.springframework.version>                
     </properties>
 
 	<dependencies>
@@ -179,17 +179,7 @@
 			<artifactId>aspectjrt</artifactId>
 			<version>1.7.2</version>
 		</dependency>
-		<dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-            <version>1.9.7</version>
-        </dependency>
 
-        <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-core-asl</artifactId>
-            <version>1.9.7</version>
-        </dependency>
         <!-- -->
         <dependency>
         	<groupId>com.ibm.db2java</groupId>
@@ -211,11 +201,16 @@
 		  	<groupId>ch.ethz.ganymed</groupId>
 		  	<artifactId>ganymed-ssh2</artifactId>
 		  	<version>build210</version>
-		  </dependency>
+		  </dependency>		  
 		  <dependency>
 		  	<groupId>com.asterdata</groupId>
   			<artifactId>noarch-aster</artifactId>
   			<version>1.0.0</version>	
+		  </dependency>
+		  <dependency>
+		  	<groupId>com.fasterxml.jackson.core</groupId>
+		  	<artifactId>jackson-databind</artifactId>
+		  	<version>2.4.3</version>
 		  </dependency>
 	</dependencies>
 	<build>

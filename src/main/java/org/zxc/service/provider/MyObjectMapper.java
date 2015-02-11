@@ -1,7 +1,11 @@
 package org.zxc.service.provider;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig.Feature;
+import org.zxc.service.application.MyObjectMapperProvider;
+
+import com.fasterxml.jackson.core.JsonGenerator.Feature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+
 
 public class MyObjectMapper {
 
@@ -17,8 +21,7 @@ public class MyObjectMapper {
 	private static ObjectMapper createDefaultMapper() {
 
 		ObjectMapper result = new ObjectMapper();
-		result.configure(Feature.INDENT_OUTPUT, true);
-
+		result.setDateFormat(MyObjectMapperProvider.DATA_FORMAT);
 		return result;
 	}
 
