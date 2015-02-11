@@ -45,11 +45,13 @@ public class TableNamesCacheContext extends ApplicationObjectSupport{
 		
 		if (isUpdateMap.get(dbName) == null) {						
 			synchronized (isUpdateMap) {
-				if(isUpdateMap.get(dbName) == null){			
-					UpdateTableNamesCache cache = this.getApplicationContext().getBean(UpdateTableNamesCache.class);	
-					cache.setDbName(dbName);
-					int interval = INTERVAL_PRO.getProperty(dbName+INTERVAL_SUFFIX) == null?30:Integer.valueOf(INTERVAL_PRO.getProperty(dbName+INTERVAL_SUFFIX));					
-					scheduler.scheduleAtFixedRate(cache, 0, interval, TimeUnit.SECONDS);
+				if(isUpdateMap.get(dbName) == null){								
+					 if(INTERVAL_PRO.getProperty(dbName+INTERVAL_SUFFIX) != null){
+						 UpdateTableNamesCache cache = this.getApplicationContext().getBean(UpdateTableNamesCache.class);	
+							cache.setDbName(dbName);
+						 int interval =Integer.valueOf(INTERVAL_PRO.getProperty(dbName+INTERVAL_SUFFIX));					
+							scheduler.scheduleAtFixedRate(cache, 0, interval, TimeUnit.SECONDS);
+					 }					
 					isUpdateMap.put(dbName, true);
 				}
 			}			
