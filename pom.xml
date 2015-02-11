@@ -217,6 +217,11 @@
 		  	<artifactId>spring-websocket</artifactId>
 		  	<version>${org.springframework.version}</version>
 		  </dependency>
+		  <dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.51</version>
+		</dependency>
 		  <!-- 
 		  <dependency>
 		  	<groupId>org.eclipse.jetty.websocket</groupId>
