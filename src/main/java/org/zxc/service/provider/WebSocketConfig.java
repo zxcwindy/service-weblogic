@@ -21,7 +21,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(myHandler(), "/shell").addInterceptors(new HttpSessionHandshakeInterceptor());;
+        registry.addHandler(myHandler(), "/shell/**").addInterceptors(new HttpSessionHandshakeInterceptor());
+//        registry.addHandler(myHandler(), "/shell/create").addInterceptors(new HttpSessionHandshakeInterceptor());;
     }
 
     @Bean
