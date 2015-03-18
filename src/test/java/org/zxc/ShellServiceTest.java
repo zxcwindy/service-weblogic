@@ -24,7 +24,7 @@ public class ShellServiceTest {
 	   
 	      channel.setOutputStream(System.out);
 
-	      channel.connect(3000);
+	      channel.connect(3000);	      
 	    }
 	    catch(Exception e){
 	      System.out.println(e);
