@@ -208,6 +208,7 @@
   			<version>1.0.0</version>	
 		  </dependency>
 		  <dependency>
+
 		  	<groupId>com.fasterxml.jackson.core</groupId>
 		  	<artifactId>jackson-databind</artifactId>
 		  	<version>2.4.3</version>
@@ -234,6 +235,12 @@
 		  	<version>9.2.2.v20140723</version>
 		  </dependency>
 		   -->
+
+			<groupId>com.gbase.jdbc</groupId>
+  			<artifactId>gbase-connector-java</artifactId>
+  			<version>8.3.81.53</version>
+		</dependency>		
+
 	</dependencies>
 	<build>
 		<finalName>service</finalName>
