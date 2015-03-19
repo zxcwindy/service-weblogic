@@ -85,12 +85,12 @@
 		<servlet-class>org.logicalcobwebs.proxool.configuration.ServletConfigurator</servlet-class>
 		<init-param>
 			<param-name>propertyFile</param-name>
-			<!-- -->
+			<!-- 
 				<param-value>WEB-INF/database.properties</param-value>
-			 
-			 <!-- 
+			 -->
+			 <!-- -->
 			<param-value>/app/dmp/dmp-app/dmp-app-domain/servers/dmp-app-admin/upload/database.properties</param-value>
-			 		 -->	 
+			 		 	 
 		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
