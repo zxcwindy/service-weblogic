@@ -2,7 +2,6 @@ package org.zxc.service.provider;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,10 +16,6 @@ import org.zxc.service.domain.ChannelMessage;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jcraft.jsch.Channel;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
 
 public class ShellHandler  extends TextWebSocketHandler{
 	
@@ -70,12 +65,15 @@ public class ShellHandler  extends TextWebSocketHandler{
 		} catch (JsonParseException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
+			results = e1.getMessage().getBytes();
 		} catch (JsonMappingException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
+			results = e1.getMessage().getBytes();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
+			results = e1.getMessage().getBytes();
 		}
 		int num = results.length / BYTE_LENGTH;
 		int mod = results.length % BYTE_LENGTH;
@@ -88,7 +86,8 @@ public class ShellHandler  extends TextWebSocketHandler{
 	private void sendMessage(WebSocketSession session,byte[] results,int start,int length){
 		ByteBuffer buffer =ByteBuffer.allocate(length);
 		buffer.put(results,start*BYTE_LENGTH,start*BYTE_LENGTH+length-1);
-		BinaryMessage replayMessage = new BinaryMessage(buffer);
+		TextMessage replayMessage = new TextMessage(buffer.array());
+//		BinaryMessage replayMessage = new BinaryMessage(buffer);
 		try {
 			session.sendMessage(replayMessage);
 		} catch (IOException e) {			
