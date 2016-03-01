@@ -1,6 +1,5 @@
 package org.zxc.service.context;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -8,10 +7,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
-import org.apache.commons.lang.text.StrBuilder;
 import org.apache.log4j.Logger;
-import org.zxc.service.dao.DBUtil;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.zxc.service.provider.ShellHandler;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
@@ -22,6 +23,10 @@ import com.jcraft.jsch.Session;
 public class ShellSession {
 	
 	private static final Logger LOG = Logger.getLogger(ShellSession.class);
+	
+	public static final int BYTE_LENGTH = 8096;
+	
+	private static final String EOF = "";
 	
 	private JSch jsch = new JSch();
 
@@ -51,60 +56,87 @@ public class ShellSession {
 		}
 	}	
 	
-	public byte[] exeCmd(String cmd){
-		StringBuilder outputBuffer = new StringBuilder();
+	/**
+	 * 在服务器端执行shell命令，将执行结果返回到客户端的通道中
+	 * @param cmd 执行的命令
+	 * @param websocketSession 对应输入的websession
+	 * @return 命令是否执行成功
+	 */
+	public boolean exeCmd(String cmd,WebSocketSession websocketSession){
+		boolean execSuccess = true;
 		BufferedReader br = null;
         InputStreamReader isr = null;
-	     try
-	     {
+	     try {
 	        Channel channel = session.openChannel("exec");
 	        LOG.info("cmd:" + cmd);
 	        ((ChannelExec)channel).setCommand(cmd);
-//	        InputStream commandOutput = channel.getInputStream();
 	        isr = new InputStreamReader(channel.getInputStream(),"utf-8");
 	        br = new BufferedReader(isr); 
-	        
 	        channel.connect();
 	        String str = null;
-	       
+	        byte[] tempByte = null;
 	        while((str = br.readLine()) != null){
-	        	outputBuffer.append(str+"\n");
+	        	tempByte = (str+"\n").getBytes();
+	        	sendMessage(websocketSession,tempByte);
 	        }
-//	        int readByte = commandOutput.read();
-//	        while(readByte != 0xffffffff)
-//	        {
-//	           outputBuffer.append((char)readByte);
-//	           readByte = commandOutput.read();
-//	        }
-
+	        sendMessage(websocketSession,EOF.getBytes());
 	        channel.disconnect();
-	     }
-	     catch(IOException ioX)
-	     {
+	     }catch(IOException ioX){
+	    	 execSuccess = false;
 	       ioX.printStackTrace();
-	     }
-	     catch(JSchException jschX)
-	     {
+	     } catch(JSchException jschX){
+	    	 execSuccess = false;
 	    	 jschX.printStackTrace();
 	     }finally{
 	    	 if(br != null){
 	    		 try {
 					br.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
+					execSuccess = false;
 					e.printStackTrace();
 				}
 	    	 }
-	    	 
 	    	 if(isr != null){
 	    		 try {
 					isr.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
+					execSuccess = false;
 					e.printStackTrace();
 				}
 	    	 }
 	     }
-	     return outputBuffer.toString().getBytes();
+	     return execSuccess;
 	}	
+	
+	/**
+	 * 向客户端发送执行结果，发送的结果有websocket的长度限制
+	 * @param websocketSession
+	 * @param messageByte 当前字节流
+	 */
+	public void sendMessage(WebSocketSession websocketSession,byte[] messageByte){
+		int num = messageByte.length / BYTE_LENGTH;
+		int mod = messageByte.length % BYTE_LENGTH;
+		for(int i = 0 ; i < num;i++){			
+			sendMessage(websocketSession,messageByte,i*BYTE_LENGTH,BYTE_LENGTH);			
+		}		
+		sendMessage(websocketSession,messageByte,num*BYTE_LENGTH,mod);		
+	}
+	
+	/**
+	 * 向客户端发送执行结果，发送指定字节长度的结果有websocket的长度限制
+	 * @param session
+	 * @param results 当前行的字节流
+	 * @param start 字节流的开始位置
+	 * @param length 字节流发送的长度
+	 */
+	private void sendMessage(WebSocketSession session,byte[] results,int start,int length){
+		try {
+			ByteBuffer buffer =ByteBuffer.allocate(length);
+			buffer.put(results,start*BYTE_LENGTH,start*BYTE_LENGTH+length-1);
+			TextMessage replayMessage = new TextMessage(buffer.array());
+			session.sendMessage(replayMessage);
+		} catch (Exception e) {			
+			e.printStackTrace();
+		}
+	}
 }

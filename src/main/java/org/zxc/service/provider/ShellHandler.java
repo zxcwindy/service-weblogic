@@ -25,8 +25,6 @@ public class ShellHandler  extends TextWebSocketHandler{
 	
 	private static final String SEND = ".*send$";
 	
-	private static final int BYTE_LENGTH = 8096;
-	
 	@Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) {		
 		String uri = session.getUri().getPath();
@@ -54,44 +52,18 @@ public class ShellHandler  extends TextWebSocketHandler{
 			e.printStackTrace();
 		}
 	}
-	
 	public void send(WebSocketSession session, TextMessage message){
 		String channelMsg = message.getPayload();
-		byte[] results = null;
 		try {
 			ChannelMessage msg = new ObjectMapper().readValue(channelMsg, ChannelMessage.class);
 			ShellSession shell = SESSION_MAP.get(msg.getChannelName());
-			results = shell.exeCmd(msg.getContent());
+			shell.exeCmd(msg.getContent(),session);
 		} catch (JsonParseException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
-			results = e1.getMessage().getBytes();
 		} catch (JsonMappingException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
-			results = e1.getMessage().getBytes();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
-			results = e1.getMessage().getBytes();
 		}
-		int num = results.length / BYTE_LENGTH;
-		int mod = results.length % BYTE_LENGTH;
-		for(int i = 0 ; i < num;i++){			
-			sendMessage(session,results,i*BYTE_LENGTH,BYTE_LENGTH);			
-		}		
-		sendMessage(session,results,num*BYTE_LENGTH,mod);
 	}	
-	
-	private void sendMessage(WebSocketSession session,byte[] results,int start,int length){
-		ByteBuffer buffer =ByteBuffer.allocate(length);
-		buffer.put(results,start*BYTE_LENGTH,start*BYTE_LENGTH+length-1);
-		TextMessage replayMessage = new TextMessage(buffer.array());
-//		BinaryMessage replayMessage = new BinaryMessage(buffer);
-		try {
-			session.sendMessage(replayMessage);
-		} catch (IOException e) {			
-			e.printStackTrace();
-		}
-	}
 }

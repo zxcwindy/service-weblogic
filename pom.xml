@@ -180,7 +180,7 @@
 			<version>1.7.2</version>
 		</dependency>
 
-        <!-- -->
+        <!-- 
         <dependency>
         	<groupId>com.ibm.db2java</groupId>
   			<artifactId>db2java</artifactId>
@@ -196,17 +196,18 @@
   				<artifactId>db2jcc_license_cu</artifactId>
   				<version>1.0.0</version>
 		  </dependency>
-
+-->
 		  <dependency>
 		  	<groupId>ch.ethz.ganymed</groupId>
 		  	<artifactId>ganymed-ssh2</artifactId>
 		  	<version>build210</version>
 		  </dependency>		  
+		  <!-- 
 		  <dependency>
 		  	<groupId>com.asterdata</groupId>
   			<artifactId>noarch-aster</artifactId>
   			<version>1.0.0</version>	
-		  </dependency>
+		  </dependency> -->
 		  <dependency>
 
 		  	<groupId>com.fasterxml.jackson.core</groupId>
@@ -223,6 +224,11 @@
 			<artifactId>jsch</artifactId>
 			<version>0.1.51</version>
 		</dependency>
+		<dependency>
+			<groupId>com.asiainfo.dacp</groupId>
+			<artifactId>dacp-crypto</artifactId>
+			<version>2.0.4</version>
+		</dependency>
 		  <!-- 
 		  <dependency>
 		  	<groupId>org.eclipse.jetty.websocket</groupId>
@@ -235,12 +241,13 @@
 		  	<version>9.2.2.v20140723</version>
 		  </dependency>
 		   -->
+		   <!-- 
 			 <dependency>
 			<groupId>com.gbase.jdbc</groupId>
   			<artifactId>gbase-connector-java</artifactId>
   			<version>8.3.81.53</version>  			
 		</dependency>		
-
+ -->
 	</dependencies>
 	<build>
 		<finalName>service</finalName>
