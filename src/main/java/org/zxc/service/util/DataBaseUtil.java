@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DataBaseUtil {
-	private static final String DATABASE_REGEX=".*(db2|oracle|mysql|sql server|hive|asterdata|gbase).*";
+	private static final String DATABASE_REGEX=".*(db2|oracle|mysql|sql server|hive|asterdata|gbase|postgresql).*";
 	
 	public static String getDBProduct(Connection conn){
 		DatabaseMetaData metaData = null;
