@@ -6,6 +6,7 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLXML;
 import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -82,6 +83,9 @@ public class MapResultSetHandler implements ResultSetHandler<Map> {
 						result[i] = null;
 					}
 					
+				}else if(rsmd.getColumnType(i+1) == Types.SQLXML){
+					SQLXML sqlXml = rs.getSQLXML(i+1);
+					result[i] = sqlXml.getString();
 				}else{
 					result[i] = rs.getObject(i + 1);
 				}				
