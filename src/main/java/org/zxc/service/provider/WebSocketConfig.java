@@ -1,5 +1,6 @@
 package org.zxc.service.provider;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.WebSocketHandler;
@@ -12,17 +13,14 @@ import org.springframework.web.socket.server.support.HttpSessionHandshakeInterce
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
+	@Autowired
+	private WebSocketShellHandler webSocketShellHandler;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(myHandler(), "/shell/**").addInterceptors(new HttpSessionHandshakeInterceptor());
-//        registry.addHandler(myHandler(), "/shell/create").addInterceptors(new HttpSessionHandshakeInterceptor());;
+//        registry.addHandler(myHandler(), "/shell/**").addInterceptors(new HttpSessionHandshakeInterceptor());
+        registry.addHandler(webSocketShellHandler, "/shell/**").addInterceptors(new HttpSessionHandshakeInterceptor());;
     }
-
-    @Bean
-    public WebSocketHandler myHandler() {
-        return new ShellHandler();
-    } 
     
     @Bean
     public ServletServerContainerFactoryBean createWebSocketContainer() {
