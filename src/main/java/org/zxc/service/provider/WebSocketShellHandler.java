@@ -1,6 +1,8 @@
 package org.zxc.service.provider;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,7 @@ import org.zxc.service.domain.Shell;
 import org.zxc.service.service.ShellService;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jcraft.jsch.JSchException;
@@ -32,39 +35,76 @@ public class WebSocketShellHandler extends TextWebSocketHandler{
 	@Autowired
 	private ShellService shellService;
 	/**
-	 *创建shell的url路由表达式 ".*create$"
+	 *创建shell的类型 "create"
 	 */
-	private static final String CREATE = ".*create$";
+	private static final String CREATE = "create";
 	
 	/**
-	 * 发送命令的uri路由表达式 ".*send$"
+	 * 发送命令的类型 "send"
 	 */
-	private static final String SEND = ".*send$";
+	private static final String SEND = "send";
 	
 	/**
-	 *关闭shell的url路由表达式 ".*exit$"
+	 *关闭shell的类型"exit"
 	 */
-	private static final String EXIT = ".*exit$";
+	private static final String EXIT = "exit";
+	
+	/**
+	 * remoteshell的uri表达式".*remoteshell$"
+	 */
+	private static final String REMOTE_SHELL = ".*remoteshell$";
+	
+	/**
+	 * 客户端发送消息体的通用转换规则
+	 * <pre>
+	 * {"type":"create","content":"{\"host\":.....}"}
+	 * {"type":"send","content":"{\"sessionId\":.....}"}
+	 * {"type":"exit","content":"{\"sessionId\":.....}"}
+	 */
+	private static final TypeReference<HashMap<String,String>> TYPE_REF = new TypeReference<HashMap<String,String>>() {};
 	
 	@Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) {		
 		String uri = session.getUri().getPath();
-		if(uri.matches(CREATE)){
-			create(session, message);
-		}else if(uri.matches(SEND)){
-			send(session,message);
-		}else if(uri.matches(EXIT)){
-			exit(session,message);
+		if(uri.matches(REMOTE_SHELL)){
+			process(session,message);
 		}
     }
 	
+	/**
+	 * 根据message的消息体中type的类型，判断是否创建、执行命令或者退出shell
+	 * <p>type类型分为<ul>
+	 * <li>create 创建
+	 * <li> send 执行命令
+	 * <li> exit 退出shell
+	 * @param session
+	 * @param message
+	 */
+	private void process(WebSocketSession session, TextMessage message) {
+		String frame = message.getPayload();
+		try {
+			Map<String,String> frameMap = new ObjectMapper().readValue(frame, TYPE_REF);
+			String type = frameMap.get("type") ;
+			String content = frameMap.get("content") ;
+			if(CREATE.equals(type)){
+				create(session, content);
+			}else if(SEND.equals(type)){
+				send(session,content);
+			}else if(EXIT.equals(type)){
+				exit(session,content);
+			}
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+		}
+		
+	}
+
 	/**
 	 * 通过通信中的信息创建shell会话，将创建的状态返回给客户端
 	 * @param session
 	 * @param message 为{@link org.zxc.service.domain.Shell}的json序列化对象
 	 */
-	private void create(WebSocketSession session, TextMessage message){		
-		String frame = message.getPayload();
+	private void create(WebSocketSession session, String frame){		
 		ObjectMapper mapper = new ObjectMapper();
 		Shell shell = null;
 		TextMessage replayMessage  = null;
@@ -97,8 +137,7 @@ public class WebSocketShellHandler extends TextWebSocketHandler{
 	 * @param webSocketSession
 	 * @param message {@link ChannelMessage}的json序列化对象
 	 */
-	private void send(WebSocketSession webSocketSession, TextMessage message){
-		String channelMsg = message.getPayload();
+	private void send(WebSocketSession webSocketSession, String channelMsg){
 		TextMessage replayMessage  = null;
 		try {
 			ChannelMessage msg = new ObjectMapper().readValue(channelMsg, ChannelMessage.class);
@@ -121,23 +160,14 @@ public class WebSocketShellHandler extends TextWebSocketHandler{
 	 * @param webSocketSession
 	 * @param message {@link ChannelMessage}的json序列化对象
 	 */
-	private void exit(WebSocketSession webSocketSession, TextMessage message){
-		String channelMsg = message.getPayload();
-		TextMessage replayMessage  = null;
+	private void exit(WebSocketSession webSocketSession, String channelMsg){
 		try {
 			ChannelMessage msg = new ObjectMapper().readValue(channelMsg, ChannelMessage.class);
 			shellService.process(msg.getChannelName(), msg.getContent());
 			shellService.destory(msg.getChannelName());
+			webSocketSession.close();
 		}  catch (IOException e1) {
 			LOG.error(e1.getMessage(), e1);
-			replayMessage = new TextMessage(e1.getMessage());
-		}
-		if(replayMessage != null){
-			try {
-				webSocketSession.sendMessage(replayMessage);
-			} catch (IOException e) {			
-				LOG.error(e.getMessage(), e);
-			}
 		}
 	}	
 }
