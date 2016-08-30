@@ -1,6 +1,7 @@
 package org.zxc.service.service;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 public interface DBDataService<T> {
@@ -15,5 +16,5 @@ public interface DBDataService<T> {
 	
 	T queryTableNames(String dbName, Map<String,Object> dataMap) throws SQLException;
 	
-	T update(String dbName, String[] sqls) throws SQLException;
+	T update(String dbName, List<String> sqlList) throws SQLException;
 }

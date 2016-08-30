@@ -72,16 +72,16 @@ public class DBDataServiceImpl implements DBDataService<Map> {
 	}
 	
 	@Override
-	public Map update(String dbName, String[] sqls) {
+	public Map update(String dbName, List<String> sqlList) {
 		Map<String,Object> result = new HashMap<String,Object>();		
-		int[] resultNums = new int[sqls.length];
+		int[] resultNums = new int[sqlList.size()];
 		for(int i = 0; i < resultNums.length; i++){
 			try {
-				resultNums[i] = runner.update(pool.getConnection(dbName),sqls[i]);
+				resultNums[i] = runner.update(pool.getConnection(dbName),sqlList.get(i));
 			} catch (SQLException e) {
 				Map<String,Object> errorMap = new HashMap<String,Object>();
 				errorMap.put("success", Arrays.copyOf(resultNums, i));
-				errorMap.put("error-sql", " execute error  ->" +sqls[i] );
+				errorMap.put("error-sql", " execute error  ->" +sqlList.get(i));
 				errorMap.put("error-result", e.getMessage() );
 				result.put("result", errorMap);
 				return result;

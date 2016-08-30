@@ -131,9 +131,8 @@ public class ShellService {
 			try {
 				shell.getChannel().connect(3000);
 				new Thread(new Runnable(){
-					private final BufferedReader br = new BufferedReader(new InputStreamReader(shell.getIs()));
 					public void run(){
-					    try{
+					    try(final BufferedReader br = new BufferedReader(new InputStreamReader(shell.getIs()));){
 					    	 String str = null;
 						        byte[] tempByte = null;
 						        while((str = br.readLine()) != null){
@@ -143,6 +142,7 @@ public class ShellService {
 						} catch (IOException e){
 							LOG.error(e.getMessage(),e);
 						} 
+					    LOG.info(shell.getSessionId()+"会话结束");
 					} }).start();
 				process(sessionId, "");
 			} catch (JSchException e) {
