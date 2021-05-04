@@ -11,5 +11,5 @@ http://www.springframework.org/schema/tx/spring-tx-3.1.xsd">
 
 	<context:annotation-config />
 	<bean id="runner" name="runner" class="org.apache.commons.dbutils.QueryRunner" />	
-	<import resource="dispatch-servlet.xml" />
+	<!-- <import resource="dispatch-servlet.xml" /> -->
 </beans>
