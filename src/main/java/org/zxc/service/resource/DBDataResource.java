@@ -26,8 +26,8 @@ public class DBDataResource {
 	@RequestMapping(value= "query/{dbName:.+}",method = RequestMethod.POST)
 	@ResponseBody
 	public Map querySql(@PathVariable("dbName") String dbName,
-			@RequestParam(value="sql") String sql) throws SQLException{
-		return dbDataService.query(dbName, sql);
+			@RequestParam(value="sql") String sql, @RequestParam(value="limit",required=false,defaultValue="100") int limit) throws SQLException{
+		return dbDataService.query(dbName, sql,limit);
 	}
 
 	/**

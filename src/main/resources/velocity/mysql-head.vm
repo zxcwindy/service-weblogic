@@ -1,1 +1,1 @@
-select * from ( $querySql) a limit 100 
+$querySql limit $limit

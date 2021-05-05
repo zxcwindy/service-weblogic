@@ -72,10 +72,9 @@ public class MetaDao {
 	}
 
 	public List<String> findColNames(ResultSetMetaData rsmd) throws SQLException {
-
 		List<String> list = new ArrayList<String>();
 		for (int i = 1; i <= rsmd.getColumnCount(); i++) {		
-			list.add(rsmd.getColumnName(i));
+			list.add(rsmd.getTableName(i) + "." +rsmd.getColumnName(i));
 		}
 		return list;
 	}

@@ -10,11 +10,13 @@ public interface DBDataService<T> {
 
 	T update(String dbName,String sql, Object... params) throws SQLException;
 	
-	T query(String dbName,String sql) throws SQLException;
+	T query(String dbName,String sql,int limit) throws SQLException;
 	          
 	T query(String dbName,String sql, Object... params) throws SQLException;
 	
 	T queryTableNames(String dbName, Map<String,Object> dataMap) throws SQLException;
 	
 	T update(String dbName, List<String> sqlList) throws SQLException;
+	
+	T batchUpdate(String dbName,String sql, Object[][] params) throws SQLException;
 }

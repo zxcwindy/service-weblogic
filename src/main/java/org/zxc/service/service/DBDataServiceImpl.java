@@ -44,9 +44,9 @@ public class DBDataServiceImpl implements DBDataService<Map> {
 	}
 
 	@Override
-	public Map query(String dbName,String sql) throws SQLException {
+	public Map query(String dbName,String sql,int limit) throws SQLException {
 		Connection conn = pool.getConnection(dbName);
-		return query(conn, sql);
+		return query(conn, sql,limit);
 	}
 
 	@Override
@@ -61,7 +61,7 @@ public class DBDataServiceImpl implements DBDataService<Map> {
 		return runner.query(conn, sql,strListRsh);
 	}
 
-	private Map query(Connection conn, String sql) throws SQLException {
+	private Map query(Connection conn, String sql,int limit) throws SQLException {
 		return runner.query(conn, sql, rsh);		
 	}
 	
@@ -88,6 +88,14 @@ public class DBDataServiceImpl implements DBDataService<Map> {
 			}
 		}
 		result.put("result", resultNums);
+		return result;
+	}
+
+	@Override
+	public Map batchUpdate(String dbName, String sql, Object[][] params) throws SQLException {
+		int[] num = runner.batch(pool.getConnection(dbName), sql, params);
+		Map<String,Object> result = new HashMap<String,Object>();
+		result.put("result", num);
 		return result;
 	}
 }

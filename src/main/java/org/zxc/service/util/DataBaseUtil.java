@@ -7,27 +7,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DataBaseUtil {
-	private static final String DATABASE_REGEX=".*(db2|oracle|mysql|sql server|hive|asterdata|gbase|postgresql).*";
-	
+	private static final String DATABASE_REGEX=".*(db2|oracle|mysql|sql server|hive|asterdata|gbase|postgresql|phoenix|sqlite|h2).*";
+
 	public static String getDBProduct(Connection conn){
 		DatabaseMetaData metaData = null;
 		String result = "";
-		
+
 		try {
 			metaData = conn.getMetaData();
 			String driverName = metaData.getDriverName();
-			
+
 			Pattern pattern = Pattern.compile(DATABASE_REGEX);
 			Matcher m = pattern.matcher(driverName.toLowerCase());
 			if (m.matches()) {
 				result = m.group(1).replace(" ", "");
-			}			
+			}
 			if("".equals(result)){
 				result="asterdata";
 			}
-		} catch (SQLException e) {			
-			e.printStackTrace();			
-		}	
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return result;
 	}
 }
