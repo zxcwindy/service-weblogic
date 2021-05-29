@@ -59,7 +59,7 @@ public class StockService {
 	/**
 	 * 存放kdj的数据
 	 */
-	private  Map<String, KDJEntry> kdjMap = new HashMap<>(6400);
+	private Map<String, KDJEntry> kdjMap = new HashMap<>(6400);
 
 	/**
 	 * 代码列表
@@ -83,10 +83,10 @@ public class StockService {
 	private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(20, 20, 1000, TimeUnit.MILLISECONDS,
 			new LinkedBlockingQueue<Runnable>(), Executors.defaultThreadFactory(),
 			new ThreadPoolExecutor.AbortPolicy());
-	
+
 	@Autowired
 	private RestTemplate restClient;
-	
+
 	@Autowired
 	private DBDataService<Map> dbDataService;
 
@@ -94,7 +94,7 @@ public class StockService {
 	 * 刷新基础数据
 	 */
 	@Scheduled(cron = "0 15 2 * * ?")
-	@Scheduled(cron = "0 40 9 ? * 1-5")//	10点
+	// @Scheduled(cron = "0 40 9 ? * 1-5")// 10点
 	public void refreshAll() {
 		codeList = getStockList();
 		scheduleLog = "";
@@ -102,6 +102,7 @@ public class StockService {
 		kdjMap.clear();
 		codeList.parallelStream().forEach(code -> {
 			try {
+				// System.out.println(code);
 				fetchData(code);
 			} catch (Exception e) {
 				try {
@@ -115,74 +116,80 @@ public class StockService {
 				}
 			}
 		});
-		log(new Date().toString() + " finished refresh"); 
+		log(new Date().toString() + " finished refresh");
 	}
 
 	private void fetchData(String code) {
-		ResponseEntity<List> result30 = restClient.getForEntity(DATA_URL + buildParam(code, MAX_LENGTH, 30),
-				List.class);
-		ResponseEntity<List> resultDay = restClient.getForEntity(DATA_URL + buildParam(code, MAX_LENGTH, 240),
-				List.class);
-		ResponseEntity<List> resultWeek = restClient.getForEntity(DATA_URL + buildParam(code, MAX_LENGTH, 1200),
-				List.class);
-		KDJEntry kdjEntry = new KDJEntry(code);
-		kdjEntry.setM30List(build((List<Map>) result30.getBody(), "yyyy-MM-dd HH:mm:ss"));
-		kdjEntry.setDayList(build((List<Map>) resultDay.getBody(), "yyyy-MM-dd"));
-		kdjEntry.setWeekList(build((List<Map>) resultWeek.getBody(), "yyyy-MM-dd"));
-		kdjEntry.setLastDate(kdjEntry.getM30List().get(result30.getBody().size() - 1).getTime());
-		kdjMap.put(code, kdjEntry);
+		try {
+			ResponseEntity<List> result30 = restClient.getForEntity(DATA_URL + buildParam(code, MAX_LENGTH, 30),
+					List.class);
+			ResponseEntity<List> resultDay = restClient.getForEntity(DATA_URL + buildParam(code, MAX_LENGTH, 240),
+					List.class);
+			ResponseEntity<List> resultWeek = restClient.getForEntity(DATA_URL + buildParam(code, MAX_LENGTH, 1200),
+					List.class);
+			KDJEntry kdjEntry = new KDJEntry(code);
+			kdjEntry.setM30List(build((List<Map>) result30.getBody(), "yyyy-MM-dd HH:mm:ss"));
+			kdjEntry.setDayList(build((List<Map>) resultDay.getBody(), "yyyy-MM-dd"));
+			kdjEntry.setWeekList(build((List<Map>) resultWeek.getBody(), "yyyy-MM-dd"));
+			kdjEntry.setLastDate(kdjEntry.getM30List().get(result30.getBody().size() - 1).getTime());
+			kdjMap.put(code, kdjEntry);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
 	 * 计算当前时间满足条件的代码
+	 * 
 	 * @return
 	 */
 	public List<KDJEntry> rfreashCurrent() {
-		if(!LOCK.isLocked()){
+		if (!LOCK.isLocked()) {
 			return calcKdj();
-		}else{
+		} else {
 			throw new RuntimeException("当前正在执行定时任务");
 		}
 	}
 
-//	下面这个配置只能实现Tue May 04 10:12:50 GMT 2021的效果
-//	@Scheduled(cron = "50 0/4 9-11,13-15 ? * 1-5")
-	@Scheduled(cron = "50 59 9 ? * 1-5")//	10点
-	@Scheduled(cron = "50 29 10 ? * 1-5")//	10:30
-	@Scheduled(cron = "50 59 10 ? * 1-5")//	11:00
-	@Scheduled(cron = "50 29 11 ? * 1-5")//	11:30
-	@Scheduled(cron = "50 29 13 ? * 1-5")//	13:30
-	@Scheduled(cron = "50 59 13 ? * 1-5")//	14:00
-	@Scheduled(cron = "50 29 14 ? * 1-5")//	14:30
-	@Scheduled(cron = "50 59 14 ? * 1-5")//	15:00
-	public void periodCalc(){
+	// 下面这个配置只能实现Tue May 04 10:12:50 GMT 2021的效果
+	// @Scheduled(cron = "50 0/4 9-11,13-15 ? * 1-5")
+	@Scheduled(cron = "50 59 9 ? * 1-5") // 10点
+	@Scheduled(cron = "50 29 10 ? * 1-5") // 10:30
+	@Scheduled(cron = "50 59 10 ? * 1-5") // 11:00
+	@Scheduled(cron = "50 29 11 ? * 1-5") // 11:30
+	@Scheduled(cron = "50 29 13 ? * 1-5") // 13:30
+	@Scheduled(cron = "50 59 13 ? * 1-5") // 14:00
+	@Scheduled(cron = "50 29 14 ? * 1-5") // 14:30
+	@Scheduled(cron = "50 59 14 ? * 1-5") // 15:00
+	public void periodCalc() {
 		LOCK.lock();
-		try{
+		try {
 			periodKdjList = calcKdj();
+			new SaveDataRunnable(periodKdjList, dbDataService).run();
 			log(new Date().toString() + " finished 30m calc");
-			EXECUTOR.submit(new SaveDataRunnable(periodKdjList,dbDataService));
-		}finally{
+		} finally {
 			LOCK.unlock();
 		}
 	}
-	
+
 	/**
 	 * 获取周期最后一次执行的结果
+	 * 
 	 * @return
 	 */
-	public List<KDJEntry> getLastPeriod(){
+	public List<KDJEntry> getLastPeriod() {
 		return this.periodKdjList;
 	}
 
-	private List<KDJEntry> calcKdj(){
+	private List<KDJEntry> calcKdj() {
 		List<String> paramsList = buildUrlParams();
 		List<Future<List<KDJEntry>>> futureList = new ArrayList<>();
 		List<KDJEntry> resultList = new ArrayList<>();
-		for(String param : paramsList){
+		for (String param : paramsList) {
 			Future<List<KDJEntry>> future = EXECUTOR.submit(new FetchDataRunnable(param));
 			futureList.add(future);
 		}
-		for(Future<List<KDJEntry>> future : futureList){
+		for (Future<List<KDJEntry>> future : futureList) {
 			try {
 				resultList.addAll(future.get());
 			} catch (InterruptedException | ExecutionException e) {
@@ -223,7 +230,7 @@ public class StockService {
 			String code = null;
 			while ((code = br.readLine()) != null) {
 				String originCode = code.split("\t")[0];
-				codeList.add(originCode.startsWith("6") ? "sh"+originCode : "sz"+originCode);
+				codeList.add(originCode.startsWith("6") ? "sh" + originCode : "sz" + originCode);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -251,97 +258,108 @@ public class StockService {
 		return errorCodeList;
 	}
 
-	public  String getScheduleLog() {
+	public String getScheduleLog() {
 		return scheduleLog;
 	}
 
 	class FetchDataRunnable implements Callable<List<KDJEntry>> {
 		private String param;
-		
-//		/** 精度 */
-//		private DecimalFormat df = new DecimalFormat("#.00");
-		
-		public FetchDataRunnable(String param){
+
+		// /** 精度 */
+		// private DecimalFormat df = new DecimalFormat("#.00");
+
+		public FetchDataRunnable(String param) {
 			this.param = param;
 		}
 
 		@Override
 		public List<KDJEntry> call() throws Exception {
-			ResponseEntity<String> result = restClient.getForEntity(CURRENT_DATA_URL + param, String.class);
-			String[] codeDatas = result.getBody().split("\n");
 			List<KDJEntry> resultList = new ArrayList<>();
-			for (String codeData : codeDatas) {
-				String[] datas = codeData.split(",");
-				CandleEntry entry = new CandleEntry(new Date(), Double.parseDouble(datas[4]), Double.parseDouble(datas[5]),
-						Double.parseDouble(datas[1]), Double.parseDouble(datas[3]));
-				String code = datas[0].replace("var hq_str_", "").replaceAll("=.*", "");
-				KDJEntry kdjEntry = kdjMap.get(code);
-				// 更新当日、当周值
-				kdjEntry.updateLast(kdjEntry.getDayList(), entry);
-				Kdj.calc(kdjEntry.getDayList(), 9, 3, 3, 1);
-				if (kdjEntry.isDayRaise()) {
-					ResponseEntity<List> result30 = restClient.getForEntity(DATA_URL + buildParam(code, MIN_LENGTH, 30),
-							List.class);
-					List<CandleEntry> list30 = build((List<Map>) result30.getBody(), "yyyy-MM-dd HH:mm:ss");
-					CandleEntry lastEntry = list30.get(MIN_LENGTH - 1);
-					kdjEntry.update30Last(lastEntry.getTime(), list30);
-					Kdj.calc(kdjEntry.getM30List(), 9, 3, 3, 1);
-					if (kdjEntry.is30Raise()) {
-						entry.setTime(lastEntry.getTime());
-						kdjEntry.updateLast(kdjEntry.getWeekList(), entry);
-						Kdj.calc(kdjEntry.getWeekList(), 9, 3, 3, 1);
+			try {
+				ResponseEntity<String> result = restClient.getForEntity(CURRENT_DATA_URL + param, String.class);
+				String[] codeDatas = result.getBody().split("\n");
 
-						kdjEntry.updateLast(kdjEntry.getDayList(), entry);
-						Kdj.calc(kdjEntry.getDayList(), 9, 3, 3, 1);
-						resultList.add(kdjEntry);
-					} 
+				for (String codeData : codeDatas) {
+					String[] datas = codeData.split(",");
+					CandleEntry entry = new CandleEntry(new Date(), Double.parseDouble(datas[4]),
+							Double.parseDouble(datas[5]), Double.parseDouble(datas[1]), Double.parseDouble(datas[3]));
+					String code = datas[0].replace("var hq_str_", "").replaceAll("=.*", "");
+					KDJEntry kdjEntry = kdjMap.get(code);
+					// 更新当日、当周值
+					kdjEntry.updateLast(kdjEntry.getDayList(), entry);
+					Kdj.calc(kdjEntry.getDayList(), 9, 3, 3, 1);
+					if (kdjEntry.isDayRaise()) {
+						ResponseEntity<List> result30 = restClient
+								.getForEntity(DATA_URL + buildParam(code, MIN_LENGTH, 30), List.class);
+						List<CandleEntry> list30 = build((List<Map>) result30.getBody(), "yyyy-MM-dd HH:mm:ss");
+						CandleEntry lastEntry = list30.get(MIN_LENGTH - 1);
+						kdjEntry.update30Last(lastEntry.getTime(), list30);
+						Kdj.calc(kdjEntry.getM30List(), 9, 3, 3, 1);
+						if (kdjEntry.is30Raise()) {
+							entry.setTime(lastEntry.getTime());
+							kdjEntry.updateLast(kdjEntry.getWeekList(), entry);
+							Kdj.calc(kdjEntry.getWeekList(), 9, 3, 3, 1);
+
+							kdjEntry.updateLast(kdjEntry.getDayList(), entry);
+							Kdj.calc(kdjEntry.getDayList(), 9, 3, 3, 1);
+							resultList.add(kdjEntry);
+						}
+					}
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-			codeDatas = null;
+
 			return resultList;
 		}
 	}
-	
-	class SaveDataRunnable implements Runnable{
+
+	class SaveDataRunnable implements Runnable {
 
 		private static final String STOCK_DB_NAME = "pyspider";
-		
+
 		private static final String REMOTE_STOCK_DB_NAME = "txpyspider";
 
 		private List<KDJEntry> entryList;
-		
+
 		private DBDataService<Map> dbDataService;
-		
-		public SaveDataRunnable(List<KDJEntry> entryList,DBDataService<Map> dbDataService){
+
+		public SaveDataRunnable(List<KDJEntry> entryList, DBDataService<Map> dbDataService) {
 			this.entryList = entryList;
 			this.dbDataService = dbDataService;
 		}
-		
+
 		@Override
 		public void run() {
-			if(!entryList.isEmpty()){
-				Date periodDate = entryList.get(0).getLastDate();	
+			if (!entryList.isEmpty()) {
+				Date periodDate = entryList.get(0).getLastDate();
 				Object[][] paramObjs = new Object[entryList.size()][3];
-				for(int i = 0; i < entryList.size(); i++){
-					Object[] obj = new Object[2];
+				for (int i = 0; i < entryList.size(); i++) {
+					Object[] obj = new Object[3];
 					obj[0] = entryList.get(i).getLastDate();
 					obj[1] = entryList.get(i).getCode();
 					obj[2] = entryList.get(i).isWeekRaise();
 					paramObjs[i] = obj;
 				}
 				try {
-					dbDataService.update(STOCK_DB_NAME, "delete from stock_period_kdj where op_time = ?",periodDate);
-					dbDataService.batchUpdate(STOCK_DB_NAME, "insert into stock_period_kdj(op_time,item_code,is_week) values (?,?,?)", paramObjs);
-					dbDataService.update(REMOTE_STOCK_DB_NAME, "delete from stock_period_kdj where op_time = ?",periodDate);
-					dbDataService.batchUpdate(REMOTE_STOCK_DB_NAME, "insert into stock_period_kdj(op_time,item_code,is_week) values (?,?,?)", paramObjs);
+					dbDataService.update(STOCK_DB_NAME, "delete from stock_period_kdj where op_time = ?", periodDate);
+					dbDataService.batchUpdate(STOCK_DB_NAME,
+							"insert into stock_period_kdj(op_time,item_code,is_week) values (?,?,?)", paramObjs);
+					// dbDataService.update(REMOTE_STOCK_DB_NAME, "delete from
+					// stock_period_kdj where op_time = ?",periodDate);
+					// dbDataService.batchUpdate(REMOTE_STOCK_DB_NAME, "insert
+					// into stock_period_kdj(op_time,item_code,is_week) values
+					// (?,?,?)", paramObjs);
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
+			} else {
+				System.out.println(new Date() + "entry is empty");
 			}
 		}
 	}
-	
-	private void log(String logInfo){
+
+	private void log(String logInfo) {
 		this.scheduleLog += "\r\n" + logInfo;
 	}
 }
