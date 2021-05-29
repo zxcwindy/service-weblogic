@@ -79,7 +79,7 @@ public class KDJEntry implements Serializable{
 	}
 
 	public boolean isWeekRaise() {
-		return isRaise(getWeekList());
+		return isWeekRaise(getWeekList());
 	}
 
 	/**
@@ -156,6 +156,24 @@ public class KDJEntry implements Serializable{
 			CandleEntry lastEntry = list.get(index);
 			CandleEntry lastEntry1 = list.get(index - 1);
 			CandleEntry lastEntry2 = list.get(index - 2);
+			
+			return (lastEntry.getM() > -5 && lastEntry.getM() < 0 && lastEntry.getM() > lastEntry1.getM()
+					&& lastEntry1.getM() > lastEntry2.getM()) ||
+					(lastEntry.getM() > -5 && lastEntry.getM() < 0 && lastEntry1.getM() > -7.5 &&  lastEntry1.getM() < 0
+							&& lastEntry2.getM() > -7.5 && lastEntry2.getM() < 0);
+		}catch(Exception e){
+			System.out.println(this.code);
+			return false;
+		}
+	}
+	
+	private boolean isWeekRaise(List<CandleEntry> list) {
+		try{
+			int index = list.size() - 1;
+			CandleEntry lastEntry = list.get(index);
+			CandleEntry lastEntry1 = list.get(index - 1);
+			CandleEntry lastEntry2 = list.get(index - 2);
+			
 			return lastEntry.getM() > -5 && lastEntry.getM() < 0 && lastEntry.getM() > lastEntry1.getM()
 					&& lastEntry1.getM() > lastEntry2.getM();
 		}catch(Exception e){
