@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.zxc.service.resource.vo.KDJEntryVo;
 import org.zxc.service.service.StockService;
 import org.zxc.service.stock.KDJEntry;
 
@@ -46,5 +48,11 @@ public class StockResource {
 	@ResponseBody
 	public String log() {
 		return stockService.getScheduleLog();
+	}
+	
+	@RequestMapping(value= "/mList",method = RequestMethod.GET)
+	@ResponseBody
+	public KDJEntryVo queryM(@RequestParam String code){
+		return stockService.queryM(code);
 	}
 }

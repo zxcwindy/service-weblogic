@@ -29,6 +29,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.zxc.service.resource.vo.CandleEntryVo;
+import org.zxc.service.resource.vo.KDJEntryVo;
 import org.zxc.service.stock.CandleEntry;
 import org.zxc.service.stock.KDJEntry;
 import org.zxc.service.stock.Kdj;
@@ -318,8 +320,6 @@ public class StockService {
 
 		private static final String STOCK_DB_NAME = "pyspider";
 
-		private static final String REMOTE_STOCK_DB_NAME = "txpyspider";
-
 		private List<KDJEntry> entryList;
 
 		private DBDataService<Map> dbDataService;
@@ -361,5 +361,30 @@ public class StockService {
 
 	private void log(String logInfo) {
 		this.scheduleLog += "\r\n" + logInfo;
+	}
+
+	public KDJEntryVo queryM(String code) {
+		KDJEntry entry = kdjMap.get(code);
+		KDJEntryVo entryVo = new KDJEntryVo();
+		if(entry != null){
+			Kdj.calc(entry.getDayList(), 9, 3, 3, 1);
+			Kdj.calc(entry.getM30List(), 9, 3, 3, 1);
+			Kdj.calc(entry.getWeekList(), 9, 3, 3, 1);
+			entryVo.setCode(code);
+			entryVo.setM30(createCandelEntry(entry.getM30List()));
+			entryVo.setDaym(createCandelEntry(entry.getDayList()));
+			entryVo.setWeekm(createCandelEntry(entry.getWeekList()));
+		}
+		return entryVo;
+	}
+
+	private List<CandleEntryVo> createCandelEntry(List<CandleEntry> entryList) {
+		int length = entryList.size();
+		List<CandleEntryVo> resultList = new ArrayList<>();
+		int i =  length - 16 >= 0 ?  length - 16 : 0;
+		for (; i < length ; i++) {
+			resultList.add(new CandleEntryVo(entryList.get(i).getTime(), entryList.get(i).getM()));
+		}
+		return resultList;
 	}
 }
