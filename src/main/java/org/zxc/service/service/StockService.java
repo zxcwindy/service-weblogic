@@ -103,25 +103,27 @@ public class StockService {
 		errorCodeList = new ArrayList<>();
 		kdjMap.clear();
 		codeList.parallelStream().forEach(code -> {
+			KDJEntry kdjEntry = new KDJEntry(code);
 			try {
 				// System.out.println(code);
-				fetchData(code);
+				fetchData(kdjEntry,code);
 			} catch (Exception e) {
 				try {
-					fetchData(code);
+					fetchData(kdjEntry,code);
 				} catch (Exception e1) {
 					try {
-						fetchData(code);
+						fetchData(kdjEntry,code);
 					} catch (Exception e2) {
 						errorCodeList.add(code);
 					}
 				}
 			}
+			kdjMap.put(code, kdjEntry);
 		});
 		log(new Date().toString() + " finished refresh");
 	}
 
-	private void fetchData(String code) {
+	private void fetchData(KDJEntry kdjEntry,String code) {
 		try {
 			ResponseEntity<List> result30 = restClient.getForEntity(DATA_URL + buildParam(code, MAX_LENGTH, 30),
 					List.class);
@@ -129,12 +131,10 @@ public class StockService {
 					List.class);
 			ResponseEntity<List> resultWeek = restClient.getForEntity(DATA_URL + buildParam(code, MAX_LENGTH, 1200),
 					List.class);
-			KDJEntry kdjEntry = new KDJEntry(code);
 			kdjEntry.setM30List(build((List<Map>) result30.getBody(), "yyyy-MM-dd HH:mm:ss"));
 			kdjEntry.setDayList(build((List<Map>) resultDay.getBody(), "yyyy-MM-dd"));
 			kdjEntry.setWeekList(build((List<Map>) resultWeek.getBody(), "yyyy-MM-dd"));
 			kdjEntry.setLastDate(kdjEntry.getM30List().get(result30.getBody().size() - 1).getTime());
-			kdjMap.put(code, kdjEntry);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -364,17 +364,16 @@ public class StockService {
 	}
 
 	public KDJEntryVo queryM(String code) {
-		KDJEntry entry = kdjMap.get(code);
+		KDJEntry entry = new KDJEntry(code);
+		fetchData(entry, code);
 		KDJEntryVo entryVo = new KDJEntryVo();
-		if(entry != null){
-			Kdj.calc(entry.getDayList(), 9, 3, 3, 1);
-			Kdj.calc(entry.getM30List(), 9, 3, 3, 1);
-			Kdj.calc(entry.getWeekList(), 9, 3, 3, 1);
-			entryVo.setCode(code);
-			entryVo.setM30(createCandelEntry(entry.getM30List()));
-			entryVo.setDaym(createCandelEntry(entry.getDayList()));
-			entryVo.setWeekm(createCandelEntry(entry.getWeekList()));
-		}
+		Kdj.calc(entry.getDayList(), 9, 3, 3, 1);
+		Kdj.calc(entry.getM30List(), 9, 3, 3, 1);
+		Kdj.calc(entry.getWeekList(), 9, 3, 3, 1);
+		entryVo.setCode(code);
+		entryVo.setM30(createCandelEntry(entry.getM30List()));
+		entryVo.setDaym(createCandelEntry(entry.getDayList()));
+		entryVo.setWeekm(createCandelEntry(entry.getWeekList()));
 		return entryVo;
 	}
 
