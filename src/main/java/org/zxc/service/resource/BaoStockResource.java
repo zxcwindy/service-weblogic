@@ -1,5 +1,7 @@
 package org.zxc.service.resource;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,9 @@ import org.zxc.service.resource.vo.KDJEntryVo;
 import org.zxc.service.service.BaoStockService;
 import org.zxc.service.service.StockService;
 import org.zxc.service.stock.KDJEntry;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 
 @Controller
@@ -50,10 +55,10 @@ public class BaoStockResource {
 	public String log() {
 		return stockService.getScheduleLog();
 	}
-//	
-//	@RequestMapping(value= "/mList",method = RequestMethod.GET)
-//	@ResponseBody
-//	public KDJEntryVo queryM(@RequestParam String code){
-//		return stockService.queryM(code);
-//	}
+	
+	@RequestMapping(value= "/mList",method = RequestMethod.GET)
+	@ResponseBody
+	public KDJEntryVo queryM(@RequestParam String code) throws JsonParseException, JsonMappingException, SQLException, IOException{
+		return stockService.queryM(code);
+	}
 }

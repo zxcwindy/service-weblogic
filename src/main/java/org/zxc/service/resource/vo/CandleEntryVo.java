@@ -12,6 +12,8 @@ public class CandleEntryVo implements Serializable{
 	
 	private double m;
 	
+	public CandleEntryVo(){}
+	
 	public CandleEntryVo(Date time, double m) {
 		super();
 		this.time = time;

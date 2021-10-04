@@ -29,19 +29,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.zxc.service.resource.vo.CandleEntryVo;
 import org.zxc.service.resource.vo.KDJEntryVo;
 import org.zxc.service.stock.CandleEntry;
 import org.zxc.service.stock.KDJEntry;
 import org.zxc.service.stock.Kdj;
 import org.zxc.service.stock.Period;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class BaoStockService extends LogService{
 
 	private List<String> codeList;
+	
+	private List<String> errorList;
 
 	private static Map<Period, String[]> periodMap = new HashMap<>();
 
@@ -64,6 +70,7 @@ public class BaoStockService extends LogService{
 		updatePeriod();
 		updatetStockList();
 		log(new Date().toString() + " begin refresh");
+		errorList = new ArrayList<>();
 		this.codeList.stream().forEach(code -> {
 			try {
 				Future<KDJEntry> futrue = EXECUTOR.submit(new FetchDataRunnable(code));
@@ -71,6 +78,7 @@ public class BaoStockService extends LogService{
 				KDJEntryVo vo = convertVo(entry);
 				saveVo(vo);
 			} catch (Exception e) {
+				errorList.add(code);
 				e.printStackTrace();
 			}
 		});
@@ -228,6 +236,23 @@ public class BaoStockService extends LogService{
 
 		private String buildParam(String type, String startDate, String endDate) {
 			return "&type=" + type + "&startDate=" + startDate + "&endDate=" + endDate;
+		}
+	}
+
+	public KDJEntryVo queryM(String code) throws SQLException, JsonParseException, JsonMappingException, IOException {
+		Map<String, List> result = dbDataService.query(STOCK_DB_NAME, "select item_code,m_30,m_day,m_week,m_month from stock_bao_period_kdj where item_code = ?", code);
+		
+		if(result.get("data").size() > 0){
+			Object[] datas = (Object[]) result.get("data").get(0);
+			ObjectMapper mapper = new ObjectMapper();
+			KDJEntryVo vo = new KDJEntryVo(code);
+			vo.setM30(mapper.readValue(datas[1].toString(),new TypeReference<List<CandleEntryVo>>() {}));
+			vo.setDaym(mapper.readValue(datas[2].toString(),new TypeReference<List<CandleEntryVo>>() {}));
+			vo.setWeekm(mapper.readValue(datas[3].toString(),new TypeReference<List<CandleEntryVo>>() {}));
+			vo.setMonthm(mapper.readValue(datas[4].toString(),new TypeReference<List<CandleEntryVo>>() {}));
+			return vo;
+		}else{
+			return stockService.queryM(code.startsWith("6")? "sh"+code : "sz"+code);
 		}
 	}
 }

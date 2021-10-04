@@ -3,6 +3,8 @@ package org.zxc.service.resource.vo;
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class KDJEntryVo  implements Serializable{
 
 	private String code;
@@ -21,12 +23,16 @@ public class KDJEntryVo  implements Serializable{
 		this.code = code;
 	}
 	
+	@JsonIgnore
 	private int type30;
 	
+	@JsonIgnore
 	private int typeDay;
 	
+	@JsonIgnore
 	private int typeWeek;
 	
+	@JsonIgnore
 	private int typeMonth;
 
 	public String getCode() {
@@ -106,6 +112,11 @@ public class KDJEntryVo  implements Serializable{
 	}
 	
 	private CandleEntryVo last(List<CandleEntryVo> list){
-		return list.get(list.size() - 1); 
+		if(list != null && list.size()> 0){
+			return list.get(list.size() - 1);
+		}else{
+			return new CandleEntryVo();
+		}
+		 
 	}
 }
