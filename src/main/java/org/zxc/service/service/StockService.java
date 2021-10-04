@@ -19,10 +19,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,29 +32,10 @@ import org.zxc.service.resource.vo.KDJEntryVo;
 import org.zxc.service.stock.CandleEntry;
 import org.zxc.service.stock.KDJEntry;
 import org.zxc.service.stock.Kdj;
+import static org.zxc.service.stock.Constans.*;
 
 @Service
-public class StockService {
-
-	/**
-	 * 周期数据接口
-	 */
-	private static final String DATA_URL = "http://quotes.sina.cn/cn/api/json_v2.php/CN_MarketDataService.getKLineData?ma=no";
-
-	/**
-	 * 当前数据接口
-	 */
-	private static final String CURRENT_DATA_URL = "http://hq.sinajs.cn/list=";
-
-	/**
-	 * 数据获取最长周期
-	 */
-	private static final int MAX_LENGTH = 60;
-
-	/**
-	 * 30分钟周期
-	 */
-	private static final int MIN_LENGTH = 8;
+public class StockService extends LogService{
 
 	/**
 	 * 存放kdj的数据
@@ -72,11 +51,6 @@ public class StockService {
 	 * 当前执行失败的代码
 	 */
 	private List<String> errorCodeList;
-
-	/**
-	 * 日志信息
-	 */
-	private String scheduleLog = "";
 
 	private List<KDJEntry> periodKdjList = new ArrayList<>();
 
@@ -95,7 +69,7 @@ public class StockService {
 	/**
 	 * 刷新基础数据
 	 */
-	@Scheduled(cron = "0 15 2 * * ?")
+//	@Scheduled(cron = "0 15 2 * * ?")
 	// @Scheduled(cron = "0 40 9 ? * 1-5")// 10点
 	public void refreshAll() {
 		codeList = getStockList();
@@ -155,14 +129,14 @@ public class StockService {
 
 	// 下面这个配置只能实现Tue May 04 10:12:50 GMT 2021的效果
 	// @Scheduled(cron = "50 0/4 9-11,13-15 ? * 1-5")
-	@Scheduled(cron = "50 59 9 ? * 1-5") // 10点
-	@Scheduled(cron = "50 29 10 ? * 1-5") // 10:30
-	@Scheduled(cron = "50 59 10 ? * 1-5") // 11:00
-	@Scheduled(cron = "50 29 11 ? * 1-5") // 11:30
-	@Scheduled(cron = "50 29 13 ? * 1-5") // 13:30
-	@Scheduled(cron = "50 59 13 ? * 1-5") // 14:00
-	@Scheduled(cron = "50 29 14 ? * 1-5") // 14:30
-	@Scheduled(cron = "50 59 14 ? * 1-5") // 15:00
+//	@Scheduled(cron = "50 59 9 ? * 1-5") // 10点
+//	@Scheduled(cron = "50 29 10 ? * 1-5") // 10:30
+//	@Scheduled(cron = "50 59 10 ? * 1-5") // 11:00
+//	@Scheduled(cron = "50 29 11 ? * 1-5") // 11:30
+//	@Scheduled(cron = "50 29 13 ? * 1-5") // 13:30
+//	@Scheduled(cron = "50 59 13 ? * 1-5") // 14:00
+//	@Scheduled(cron = "50 29 14 ? * 1-5") // 14:30
+//	@Scheduled(cron = "50 59 14 ? * 1-5") // 15:00
 	public void periodCalc() {
 		LOCK.lock();
 		try {
@@ -260,10 +234,6 @@ public class StockService {
 		return errorCodeList;
 	}
 
-	public String getScheduleLog() {
-		return scheduleLog;
-	}
-
 	class FetchDataRunnable implements Callable<List<KDJEntry>> {
 		private String param;
 
@@ -290,14 +260,14 @@ public class StockService {
 					// 更新当日、当周值
 					kdjEntry.updateLast(kdjEntry.getDayList(), entry);
 					Kdj.calc(kdjEntry.getDayList(), 9, 3, 3, 1);
-					if (kdjEntry.isDayRaise()) {
+					if (isRaise(kdjEntry.getTypeDay())) {
 						ResponseEntity<List> result30 = restClient
 								.getForEntity(DATA_URL + buildParam(code, MIN_LENGTH, 30), List.class);
 						List<CandleEntry> list30 = build((List<Map>) result30.getBody(), "yyyy-MM-dd HH:mm:ss");
 						CandleEntry lastEntry = list30.get(MIN_LENGTH - 1);
 						kdjEntry.update30Last(lastEntry.getTime(), list30);
 						Kdj.calc(kdjEntry.getM30List(), 9, 3, 3, 1);
-						if (kdjEntry.is30Raise()) {
+						if (isRaise(kdjEntry.getType30())) {
 							entry.setTime(lastEntry.getTime());
 							kdjEntry.updateLast(kdjEntry.getWeekList(), entry);
 							Kdj.calc(kdjEntry.getWeekList(), 9, 3, 3, 1);
@@ -311,14 +281,15 @@ public class StockService {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-
 			return resultList;
 		}
 	}
+	
+	private boolean isRaise(int result){
+		return result > 0;
+	}
 
 	class SaveDataRunnable implements Runnable {
-
-		private static final String STOCK_DB_NAME = "pyspider";
 
 		private List<KDJEntry> entryList;
 
@@ -333,18 +304,20 @@ public class StockService {
 		public void run() {
 			if (!entryList.isEmpty()) {
 				Date periodDate = entryList.get(0).getLastDate();
-				Object[][] paramObjs = new Object[entryList.size()][3];
+				Object[][] paramObjs = new Object[entryList.size()][5];
 				for (int i = 0; i < entryList.size(); i++) {
-					Object[] obj = new Object[3];
+					Object[] obj = new Object[5];
 					obj[0] = entryList.get(i).getLastDate();
 					obj[1] = entryList.get(i).getCode();
-					obj[2] = entryList.get(i).isWeekRaise();
+					obj[2] = entryList.get(i).getType30();
+					obj[3] = entryList.get(i).getTypeDay();
+					obj[4] = entryList.get(i).getTypeWeek();
 					paramObjs[i] = obj;
 				}
 				try {
 					dbDataService.update(STOCK_DB_NAME, "delete from stock_period_kdj where op_time = ?", periodDate);
 					dbDataService.batchUpdate(STOCK_DB_NAME,
-							"insert into stock_period_kdj(op_time,item_code,is_week) values (?,?,?)", paramObjs);
+							"insert into stock_period_kdj(op_time,item_code,type_30,type_day,type_week) values (?,?,?,?,?)", paramObjs);
 					// dbDataService.update(REMOTE_STOCK_DB_NAME, "delete from
 					// stock_period_kdj where op_time = ?",periodDate);
 					// dbDataService.batchUpdate(REMOTE_STOCK_DB_NAME, "insert
@@ -357,10 +330,6 @@ public class StockService {
 				System.out.println(new Date() + "entry is empty");
 			}
 		}
-	}
-
-	private void log(String logInfo) {
-		this.scheduleLog += "\r\n" + logInfo;
 	}
 
 	public KDJEntryVo queryM(String code) {
@@ -377,7 +346,7 @@ public class StockService {
 		return entryVo;
 	}
 
-	private List<CandleEntryVo> createCandelEntry(List<CandleEntry> entryList) {
+	public List<CandleEntryVo> createCandelEntry(List<CandleEntry> entryList) {
 		int length = entryList.size();
 		List<CandleEntryVo> resultList = new ArrayList<>();
 		int i =  length - 16 >= 0 ?  length - 16 : 0;

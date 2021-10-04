@@ -24,6 +24,17 @@ public class KDJEntry implements Serializable{
 
 	@JsonIgnore
 	private List<CandleEntry> weekList = new LinkedList<>();
+	
+	@JsonIgnore
+	private List<CandleEntry> monthList = new LinkedList<>();
+	
+	private int type30;
+	
+	private int typeDay;
+	
+	private int typeWeek;
+	
+	private int typeMonth;
 
 	/**
 	 * 周期
@@ -69,17 +80,33 @@ public class KDJEntry implements Serializable{
 	public void setWeekList(List<CandleEntry> weekList) {
 		this.weekList = weekList;
 	}
-
-	public boolean is30Raise() {
-		return isRaise(getM30List());
+	
+	public List<CandleEntry> getMonthList() {
+		return monthList;
 	}
 
-	public boolean isDayRaise() {
-		return isRaise(getDayList());
+	public void setMonthList(List<CandleEntry> monthList) {
+		this.monthList = monthList;
 	}
 
-	public boolean isWeekRaise() {
-		return isWeekRaise(getWeekList());
+	public int getType30() {
+		type30 = raiseType(getM30List());
+		return type30;
+	}
+
+	public int getTypeDay() {
+		typeDay = raiseType(getDayList());
+		return typeDay;
+	}
+
+	public int getTypeWeek() {
+		typeWeek =  weekRaiseType(getWeekList());
+		return typeWeek;
+	}
+	
+	public int getTypeMonth() {
+		typeMonth = weekRaiseType(getMonthList());
+		return typeMonth;
 	}
 
 	/**
@@ -112,7 +139,9 @@ public class KDJEntry implements Serializable{
 	private void updatePeriod30(long periodTime, List<CandleEntry> m30List) {
 		int size = m30List.size();
 		for (int i = (int) (size - periodTime); i < size; i++) {
-			this.getM30List().remove(0);
+			if(this.getM30List().size() > 0){
+				this.getM30List().remove(0);
+			}
 			this.getM30List().add(m30List.get(i));
 		}
 	}
@@ -150,35 +179,49 @@ public class KDJEntry implements Serializable{
 		return cal.get(Calendar.HOUR_OF_DAY) == 15;
 	}
 
-	private boolean isRaise(List<CandleEntry> list) {
+	/**
+	 * 规则一比规则二更为严格
+	 * @param list
+	 * @return 0: 没有交叉;1：第一种规则交叉；2：第二种规则交叉
+	 */
+	private int raiseType(List<CandleEntry> list) {
 		try{
 			int index = list.size() - 1;
 			CandleEntry lastEntry = list.get(index);
 			CandleEntry lastEntry1 = list.get(index - 1);
 			CandleEntry lastEntry2 = list.get(index - 2);
 			
-			return (lastEntry.getM() > -5 && lastEntry.getM() < 0 && lastEntry.getM() > lastEntry1.getM()
-					&& lastEntry1.getM() > lastEntry2.getM()) ||
-					(lastEntry.getM() > -5 && lastEntry.getM() < 0 && lastEntry1.getM() > -7.5 &&  lastEntry1.getM() < 0
-							&& lastEntry2.getM() > -7.5 && lastEntry2.getM() < 0);
+			if (lastEntry.getM() > -5 && lastEntry.getM() < 0 && lastEntry.getM() > lastEntry1.getM()
+					&& lastEntry1.getM() > lastEntry2.getM()){
+				return 1;
+			}else if(lastEntry.getM() > -5 && lastEntry.getM() < 0 && lastEntry1.getM() > -7.5 &&  lastEntry1.getM() < 0
+							&& lastEntry2.getM() > -7.5 && lastEntry2.getM() < 0){
+				return 2;
+			}else{
+				return 0;
+			}
 		}catch(Exception e){
 			System.out.println(this.code);
-			return false;
+			return 0;
 		}
 	}
 	
-	private boolean isWeekRaise(List<CandleEntry> list) {
+	private int weekRaiseType(List<CandleEntry> list) {
 		try{
 			int index = list.size() - 1;
 			CandleEntry lastEntry = list.get(index);
 			CandleEntry lastEntry1 = list.get(index - 1);
 			CandleEntry lastEntry2 = list.get(index - 2);
 			
-			return lastEntry.getM() > -5 && lastEntry.getM() < 0 && lastEntry.getM() > lastEntry1.getM()
-					&& lastEntry1.getM() > lastEntry2.getM();
+			if(lastEntry.getM() > -5 && lastEntry.getM() < 0 && lastEntry.getM() > lastEntry1.getM()
+					&& lastEntry1.getM() > lastEntry2.getM()){
+				return 1;
+			}else{
+				return 0;
+			}
 		}catch(Exception e){
 			System.out.println(this.code);
-			return false;
+			return 0;
 		}
 	}
 }
