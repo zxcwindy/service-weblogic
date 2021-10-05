@@ -143,7 +143,7 @@ public class BaoStockService extends LogService{
 		String[] dates = new String[2];
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 		Calendar cal = Calendar.getInstance();
-		;
+		
 		dates[0] = format.format(cal.getTime());
 
 		switch (period) {
@@ -187,6 +187,10 @@ public class BaoStockService extends LogService{
 			this.code = code;
 		}
 
+		/* 
+		* 获取30,日,周,月数据
+		 * @see java.util.concurrent.Callable#call()
+		 */
 		@Override
 		public KDJEntry call() throws Exception {
 			KDJEntry entry = new KDJEntry(code);
@@ -196,23 +200,35 @@ public class BaoStockService extends LogService{
 			List<CandleEntry> entryDayList = build(Period.Day, "yyyy-MM-dd");
 			Kdj.calc(entryDayList, 9, 3, 3, 1);
 			entry.setDayList(entryDayList);
-
+			
+			int daySize = entryDayList.size();
+			
 			List<CandleEntry> entryWeekList = build(Period.Week, "yyyy-MM-dd");
+			CandleEntry lastWeekEntry = buildPeriodCandleEntry(entryDayList,getFirstDayOfWeek(daySize > 0?entryDayList.get(daySize - 1).getTime() : null));
+			int weekSize = entryWeekList.size();
+			if(weekSize > 0 && !entryWeekList.get(weekSize -1).getTime().equals(lastWeekEntry.getTime())){
+				entryWeekList.add(lastWeekEntry);
+			}
 			Kdj.calc(entryWeekList, 9, 3, 3, 1);
 			entry.setWeekList(entryWeekList);
 
 			List<CandleEntry> entryMonthList = build(Period.Month, "yyyy-MM-dd");
+			CandleEntry lastMonthEntry = buildPeriodCandleEntry(entryDayList,getFirstDayOfMonth(daySize > 0?entryDayList.get(daySize - 1).getTime() : null));
+			int monthSize = entryMonthList.size();
+			if(monthSize > 0 && !entryMonthList.get(monthSize -1).getTime().equals(lastMonthEntry.getTime())){
+				entryMonthList.add(lastMonthEntry);
+			}
 			Kdj.calc(entryMonthList, 9, 3, 3, 1);
 			entry.setMonthList(entryMonthList);
 			return entry;
 		}
 
 		private List<CandleEntry> build(Period period, String format) {
-			ResponseEntity<Map> result30 = restClient.getForEntity(
+			ResponseEntity<Map> responseData = restClient.getForEntity(
 					BAO_DATA_URL + "/" + code + "?"
 							+ buildParam(period.toString(), periodMap.get(period)[1], periodMap.get(period)[0]),
 					Map.class);
-			List<List<String>> dataList = (List<List<String>>) result30.getBody().get("data");
+			List<List<String>> dataList = (List<List<String>>) responseData.getBody().get("data");
 
 			SimpleDateFormat sFormat = new SimpleDateFormat(format);
 			List<CandleEntry> result = new ArrayList<>();
@@ -236,6 +252,62 @@ public class BaoStockService extends LogService{
 
 		private String buildParam(String type, String startDate, String endDate) {
 			return "&type=" + type + "&startDate=" + startDate + "&endDate=" + endDate;
+		}
+		
+		/**
+		 * 由于baostock的周和月数据需要等本周/月完结后再统计，为保证数据的实时性，需要手动计算当周/月的数据．
+		 * @param entryDayList
+		 * @param beginDate
+		 * @param endDate
+		 * @return
+		 */
+		private CandleEntry buildPeriodCandleEntry(List<CandleEntry> entryDayList,Date beginDate){
+			CandleEntry result = new CandleEntry();
+			List<CandleEntry>  tempList = new ArrayList<>();
+//			第一个元素是最后一天，最后一个元素是第一天
+			for(int i = entryDayList.size() -1; i> -1;i--){
+				if(entryDayList.get(i).getTime().getTime() >= beginDate.getTime()){
+					tempList.add(entryDayList.get(i));
+				}else{
+					break;
+				}
+			}			
+			int length = tempList.size();
+			if(length > 0){
+				result.setTime(tempList.get(0).getTime());
+				result.setClose(tempList.get(0).getClose());
+				result.setOpen(tempList.get(length - 1).getOpen());
+				result.setHigh(tempList.stream().max((a,b) -> {return a.getHigh() > b.getHigh() ? 1 : -1;}).get().getHigh());
+				result.setLow(tempList.stream().min((a,b) -> {return a.getLow() > b.getLow() ? 1 : -1;}).get().getLow());
+			}
+			return result;	
+		}
+		
+		private Date getFirstDayOfWeek(Date date){
+			Calendar cal = Calendar.getInstance();
+			if(date != null){
+				cal.setTime(date);
+			}
+			int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+			cal.add(Calendar.DATE, dayOfWeek > 1 ? (dayOfWeek - 2) * -1 : 0);
+			resetDate(cal);
+			return cal.getTime();
+		}
+		
+		private Date getFirstDayOfMonth(Date date){
+			Calendar cal = Calendar.getInstance();
+			if(date != null){
+				cal.setTime(date);
+			}
+			cal.set(Calendar.DAY_OF_MONTH,1);
+			resetDate(cal);
+			return cal.getTime();
+		}
+		
+		private void resetDate(Calendar cal){
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
 		}
 	}
 
