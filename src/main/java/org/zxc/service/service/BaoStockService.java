@@ -166,15 +166,16 @@ public class BaoStockService extends LogService{
 
 	private List<String> updatetStockList() {
 		this.codeList = new ArrayList<>();
-		try (InputStream in = StockService.class.getClassLoader().getResourceAsStream("stockList");
-				InputStreamReader isr = new InputStreamReader(in);
-				BufferedReader br = new BufferedReader(isr);) {
-			String code = null;
-			while ((code = br.readLine()) != null) {
-				codeList.add(code.split("\t")[0]);
+		try {
+			Map<String, List> resultMap = dbDataService.query(STOCK_DB_NAME, "select item_code from dim_stock_50y", 10000);
+			List<Object[]> dataList = resultMap.get("data");
+			for(Object[] data : dataList){
+				if(data.length > 0){
+					this.codeList.add(data[0].toString());
+				}
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (SQLException e1) {
+			e1.printStackTrace();
 		}
 		return codeList;
 	}
