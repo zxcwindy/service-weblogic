@@ -3,10 +3,7 @@ package org.zxc.service.service;
 import static org.zxc.service.stock.Constans.BAO_DATA_URL;
 import static org.zxc.service.stock.Constans.STOCK_DB_NAME;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -69,21 +66,38 @@ public class BaoStockService extends LogService{
 		scheduleLog = "";
 		updatePeriod();
 		updatetStockList();
-		log(new Date().toString() + " begin refresh");
-		errorList = new ArrayList<>();
-		this.codeList.stream().forEach(code -> {
-			try {
-				Future<KDJEntry> futrue = EXECUTOR.submit(new FetchDataRunnable(code));
-				KDJEntry entry = futrue.get();
-				KDJEntryVo vo = convertVo(entry);
-				saveVo(vo);
-			} catch (Exception e) {
-				errorList.add(code);
-				e.printStackTrace();
-			}
-		});
-		log(new Date().toString() + " end refresh");
+		try {
+			dbDataService.update(STOCK_DB_NAME, "truncate table stock_bao_period_kdj"); 
+			login();
+			log(new Date().toString() + " begin refresh");
+			errorList = new ArrayList<>();
+			this.codeList.stream().forEach(code -> {
+				try {
+					Future<KDJEntry> futrue = EXECUTOR.submit(new FetchDataRunnable(code));
+					KDJEntry entry = futrue.get();
+					KDJEntryVo vo = convertVo(entry);
+					saveVo(vo);
+				} catch (Exception e) {
+					errorList.add(code);
+					e.printStackTrace();
+				}
+			});
+			log(new Date().toString() + " end refresh");
+			logout();
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 	}
+	
+	private void login(){
+		this.restClient.getForEntity(BAO_DATA_URL+"login",String.class);
+	}
+	
+	private void logout(){
+		this.restClient.getForEntity(BAO_DATA_URL+"logout",String.class);
+	}
+	
 
 	private KDJEntryVo convertVo(KDJEntry entry) {
 		KDJEntryVo vo = new KDJEntryVo(entry.getCode());
@@ -99,8 +113,7 @@ public class BaoStockService extends LogService{
 	}
 
 	private void saveVo(KDJEntryVo vo) {
-		try {
-			dbDataService.update(STOCK_DB_NAME, "delete from stock_bao_period_kdj where item_code = ?", vo.getCode());
+		try {			
 			ObjectMapper mapper = new ObjectMapper();
 			dbDataService.update(STOCK_DB_NAME,
 					"insert into stock_bao_period_kdj(item_code,m_30,m_day,m_week,m_month,type_30,type_day,type_week,type_month,sort_value_1,sort_value_2) "
@@ -226,7 +239,7 @@ public class BaoStockService extends LogService{
 
 		private List<CandleEntry> build(Period period, String format) {
 			ResponseEntity<Map> responseData = restClient.getForEntity(
-					BAO_DATA_URL + "/" + code + "?"
+					BAO_DATA_URL + "item/" + code + "?"
 							+ buildParam(period.toString(), periodMap.get(period)[1], periodMap.get(period)[0]),
 					Map.class);
 			List<List<String>> dataList = (List<List<String>>) responseData.getBody().get("data");
@@ -237,7 +250,7 @@ public class BaoStockService extends LogService{
 				try {
 					result.add(new CandleEntry(sFormat.parse(strList.get(0)), Double.parseDouble(strList.get(1)),
 							Double.parseDouble(strList.get(2)), Double.parseDouble(strList.get(3)),
-							Double.parseDouble(strList.get(4))));
+							Float.parseFloat(strList.get(4))));
 				} catch (ParseException e) {
 					e.printStackTrace();
 				}
