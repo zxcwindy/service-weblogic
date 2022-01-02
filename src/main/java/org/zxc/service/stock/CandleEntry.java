@@ -1,44 +1,128 @@
 package org.zxc.service.stock;
 
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.zxc.service.provider.CustomerDoubleFESerialize;
+import org.zxc.service.provider.CustomerDoubleFlagSerialize;
+import org.zxc.service.provider.CustomerDoubleSerialize;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-public class CandleEntry {
-	
+/**
+ *
+ * @author david
+ * 2022年1月1日
+ */
+public class CandleEntry implements Serializable {
+
 	/**
 	 * 时间
 	 */
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
 	private Date time;
-	
+
 //	/** 精度 */
 //	private DecimalFormat df = new DecimalFormat("#.00");
-	
+
 	/** shadow-high value */
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double mShadowHigh = 0f;
 
 	/** shadow-low value */
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double mShadowLow = 0f;
 
 	/** close value */
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double mClose = 0f;
 
 	/** open value */
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double mOpen = 0f;
+	/**
+	 * 成交量
+	 */
+	@JsonSerialize(using = CustomerDoubleFESerialize.class)
+	private double volume =0f;
+
+	/**
+	 * 成交额
+	 */
+	@JsonSerialize(using = CustomerDoubleFESerialize.class)
+	private double amount = 0f;
+
+	/**
+	 * 换手率
+	 */
+	private double turn = 0f;
+
+	/**
+	 * 涨跌幅
+	 */
+	private double pctChg = 0f;
 
 	private double y = 0f;
 
 	// KDJ 指标的三个属性
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double k;
-	private double d;
-	private double j;
-	private double m;
 	
-	private SimpleDateFormat sFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	private double d;
+	
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	private double j;
+	
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	private double m;
+
+	// boll指标三个属性
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	private double mb;
+	
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	private double up;
+	
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	private double dn;
+
+//	5日、10日、20日、30日、60日日均线
+	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+	private double ma5;
+	
+	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+	private double ma10;
+	
+	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+	private double ma20;
+	
+	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+	private double ma30;
+	
+	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+	private double ma60;
+
+//	ema
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	private double ema;
+
+//	macd
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	private double dif;
+	
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	private double dea;
+	
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	private double macd;
+
+
+//	private SimpleDateFormat sFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	public CandleEntry() {
 	}
@@ -49,7 +133,7 @@ public class CandleEntry {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param x
 	 *            The value on the x-axis
 	 * @param shadowH
@@ -61,26 +145,22 @@ public class CandleEntry {
 	 * @param close
 	 *            The close value
 	 */
-	public CandleEntry(Date time,double shadowH, double shadowL, double open, double close) {
+    public CandleEntry(Date time,double shadowH, double shadowL, double open, double close,double volume,double amount ,double turn, double pctChg) {
 		this.time = time;
 		this.mShadowHigh = shadowH;
 		this.mShadowLow = shadowL;
 		this.mOpen = open;
 		this.mClose = close;
-	}
-	
-	public CandleEntry(String time,double shadowH, double shadowL, double open, double close) {
-		this.setTime(time);
-		this.mShadowHigh = shadowH;
-		this.mShadowLow = shadowL;
-		this.mOpen = open;
-		this.mClose = close;
+		this.volume = volume;
+		this.amount = amount;
+		this.turn = turn;
+		this.pctChg = pctChg;
 	}
 
 	/**
 	 * Returns the overall range (difference) between shadow-high and
 	 * shadow-low.
-	 * 
+	 *
 	 * @return
 	 */
 	@JsonIgnore
@@ -90,7 +170,7 @@ public class CandleEntry {
 
 	/**
 	 * Returns the body size (difference between open and close).
-	 * 
+	 *
 	 * @return
 	 */
 	@JsonIgnore
@@ -100,7 +180,7 @@ public class CandleEntry {
 
 	/**
 	 * Returns the upper shadows highest value.
-	 * 
+	 *
 	 * @return
 	 */
 	public double getHigh() {
@@ -113,7 +193,7 @@ public class CandleEntry {
 
 	/**
 	 * Returns the lower shadows lowest value.
-	 * 
+	 *
 	 * @return
 	 */
 	public double getLow() {
@@ -126,7 +206,7 @@ public class CandleEntry {
 
 	/**
 	 * Returns the bodys close value.
-	 * 
+	 *
 	 * @return
 	 */
 	public double getClose() {
@@ -139,7 +219,7 @@ public class CandleEntry {
 
 	/**
 	 * Returns the bodys open value.
-	 * 
+	 *
 	 * @return
 	 */
 	public double getOpen() {
@@ -185,6 +265,134 @@ public class CandleEntry {
 		return this.getK() - getD();
 	}
 
+	public double getVolume() {
+		return volume;
+	}
+
+	public void setVolume(double volume) {
+		this.volume = volume;
+	}
+
+	public double getAmount() {
+		return amount;
+	}
+
+	public void setAmount(double amount) {
+		this.amount = amount;
+	}
+
+	public double getTurn() {
+		return turn;
+	}
+
+	public void setTurn(double turn) {
+		this.turn = turn;
+	}
+
+	public double getPctChg() {
+		return pctChg;
+	}
+
+	public void setPctChg(double pctChg) {
+		this.pctChg = pctChg;
+	}
+
+	public double getMb() {
+		return mb;
+	}
+
+	public void setMb(double mb) {
+		this.mb = mb;
+	}
+
+	public double getUp() {
+		return up;
+	}
+
+	public void setUp(double up) {
+		this.up = up;
+	}
+
+	public double getDn() {
+		return dn;
+	}
+
+	public void setDn(double dn) {
+		this.dn = dn;
+	}
+
+	public double getMa5() {
+		return ma5;
+	}
+
+	public void setMa5(double ma5) {
+		this.ma5 = ma5;
+	}
+	
+	public double getMa10() {
+		return ma10;
+	}
+
+	public void setMa10(double ma10) {
+		this.ma10 = ma10;
+	}
+
+	public double getMa20() {
+		return ma20;
+	}
+
+	public void setMa20(double ma20) {
+		this.ma20 = ma20;
+	}
+
+	public double getMa30() {
+		return ma30;
+	}
+
+	public void setMa30(double ma30) {
+		this.ma30 = ma30;
+	}
+
+	public double getMa60() {
+		return ma60;
+	}
+
+	public double getEma() {
+		return ema;
+	}
+
+	public void setEma(double ema) {
+		this.ema = ema;
+	}
+
+	public double getDif() {
+		return dif;
+	}
+
+	public void setDif(double dif) {
+		this.dif = dif;
+	}
+
+	public double getDea() {
+		return dea;
+	}
+
+	public void setDea(double dea) {
+		this.dea = dea;
+	}
+
+	public double getMacd() {
+		return macd;
+	}
+
+	public void setMacd(double macd) {
+		this.macd = macd;
+	}
+
+	public void setMa60(double ma60) {
+		this.ma60 = ma60;
+	}
+
 	public Date getTime() {
 		return time;
 	}
@@ -192,26 +400,18 @@ public class CandleEntry {
 	public void setTime(Date time) {
 		this.time = time;
 	}
-	
-	public void setTime(String time) {
-		try {
-			this.time = sFormat.parse(time);
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
-	}
 
 	@Override
 	  public String toString() {
 	    return "CandleEntry{" +
-	        "open=" + getOpen() +
-	        ", high=" + getHigh() +
-	        ", low=" + getLow() +
-	        ", close=" + getClose()+
-	        ", time=" + sFormat.format(getTime()) +
-	        ", k=" + getK() +
-	        ", d=" + getD() +
-	        ", j=" + getJ() +
-	        '}';
+		"open=" + getOpen() +
+		", high=" + getHigh() +
+		", low=" + getLow() +
+		", close=" + getClose()+
+		", time=" + getTime() +
+		", k=" + getK() +
+		", d=" + getD() +
+		", j=" + getJ() +
+		'}';
 	  }
 }

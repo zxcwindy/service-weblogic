@@ -39,6 +39,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ *主要提供kdj判断
+ * @author david
+ * 2022年1月1日
+ */
 @Service
 public class BaoStockService extends LogService{
 
@@ -246,11 +251,17 @@ public class BaoStockService extends LogService{
 
 			SimpleDateFormat sFormat = new SimpleDateFormat(format);
 			List<CandleEntry> result = new ArrayList<>();
+			boolean is30 = false;
+			if(dataList.size() > 0){
+				is30 = dataList.get(0).size() == 7;
+			}
 			for (List<String> strList : dataList) {
 				try {
 					result.add(new CandleEntry(sFormat.parse(strList.get(0)), Double.parseDouble(strList.get(1)),
 							Double.parseDouble(strList.get(2)), Double.parseDouble(strList.get(3)),
-							Float.parseFloat(strList.get(4))));
+							Double.parseDouble(strList.get(4)),Double.parseDouble(strList.get(5)),
+							Double.parseDouble(strList.get(6)),is30 ? 0 : Double.parseDouble(strList.get(7)),
+									is30? 0: Double.parseDouble(strList.get(8))));
 				} catch (ParseException e) {
 					e.printStackTrace();
 				}

@@ -222,7 +222,7 @@ public class StockService extends LogService{
 				result.add(new CandleEntry(sFormat.parse(map.get("day").toString()),
 						Double.parseDouble(map.get("high").toString()), Double.parseDouble(map.get("low").toString()),
 						Double.parseDouble(map.get("open").toString()),
-						Double.parseDouble(map.get("close").toString())));
+						Double.parseDouble(map.get("close").toString()),0f,0f,0f,0f));
 			} catch (ParseException e) {
 				e.printStackTrace();
 			}
@@ -254,7 +254,7 @@ public class StockService extends LogService{
 				for (String codeData : codeDatas) {
 					String[] datas = codeData.split(",");
 					CandleEntry entry = new CandleEntry(new Date(), Double.parseDouble(datas[4]),
-							Double.parseDouble(datas[5]), Double.parseDouble(datas[1]), Double.parseDouble(datas[3]));
+							Double.parseDouble(datas[5]), Double.parseDouble(datas[1]), Double.parseDouble(datas[3]),0f,0f,0f,0f);
 					String code = datas[0].replace("var hq_str_", "").replaceAll("=.*", "");
 					KDJEntry kdjEntry = kdjMap.get(code);
 					// 更新当日、当周值
