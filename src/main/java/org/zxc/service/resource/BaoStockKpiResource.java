@@ -60,6 +60,7 @@ public class BaoStockKpiResource {
 	}
 	
 	@RequestMapping(value= "/login",method = RequestMethod.GET)
+	@ResponseBody
 	public void login() {
 		stockKpiService.login();
 	}
