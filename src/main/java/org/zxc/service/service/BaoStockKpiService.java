@@ -67,7 +67,7 @@ public class BaoStockKpiService extends LogService{
 				ResourcePoolsBuilder.newResourcePoolsBuilder()
 		    .heap(12, EntryUnit.ENTRIES)
 		    .disk(1024, MemoryUnit.MB)
-		    ).withExpiry(Expirations.timeToLiveExpiration(Duration.of(8, TimeUnit.HOURS))).build());
+		    ).withExpiry(Expirations.timeToLiveExpiration(Duration.of(4, TimeUnit.HOURS))).build());
 	}
 
 	private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(5, 10, 1000, TimeUnit.MILLISECONDS,
@@ -321,11 +321,11 @@ public class BaoStockKpiService extends LogService{
 				result.setOpen(tempList.get(length - 1).getOpen());
 				result.setHigh(tempList.stream().max((a,b) -> {return a.getHigh() > b.getHigh() ? 1 : -1;}).get().getHigh());
 				result.setLow(tempList.stream().min((a,b) -> {return a.getLow() > b.getLow() ? 1 : -1;}).get().getLow());
-				double sumVol = 0f;
-				for(CandleEntry item : tempList){
-					sumVol += item.getVolume();
+				result.setVolume(tempList.stream().mapToDouble(CandleEntry::getVolume).sum());
+				result.setAmount(tempList.stream().mapToDouble(CandleEntry::getAmount).sum());
+				if(length > 1){
+					result.setPctChg(((result.getClose() - tempList.get(length - 1).getClose())/tempList.get(length - 1).getClose())*100);	
 				}
-				result.setVolume(sumVol);
 			}
 			return result;
 		}

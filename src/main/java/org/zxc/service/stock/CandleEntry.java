@@ -23,7 +23,7 @@ public class CandleEntry implements Serializable {
 	/**
 	 * 时间
 	 */
-	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
 	private Date time;
 
 //	/** 精度 */
@@ -82,13 +82,13 @@ public class CandleEntry implements Serializable {
 	private double m;
 
 	// boll指标三个属性
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double mb;
 	
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double up;
 	
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double dn;
 
 //	5日、10日、20日、30日、60日日均线
@@ -183,6 +183,7 @@ public class CandleEntry implements Serializable {
 	 *
 	 * @return
 	 */
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	public double getHigh() {
 		return mShadowHigh;
 	}
@@ -196,6 +197,7 @@ public class CandleEntry implements Serializable {
 	 *
 	 * @return
 	 */
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	public double getLow() {
 		return mShadowLow;
 	}
@@ -209,6 +211,7 @@ public class CandleEntry implements Serializable {
 	 *
 	 * @return
 	 */
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	public double getClose() {
 		return mClose;
 	}
@@ -222,6 +225,7 @@ public class CandleEntry implements Serializable {
 	 *
 	 * @return
 	 */
+	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	public double getOpen() {
 		return mOpen;
 	}
