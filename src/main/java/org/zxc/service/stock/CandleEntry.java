@@ -5,6 +5,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.zxc.service.provider.CandleArrayJsonSerializer;
 import org.zxc.service.provider.CustomerDoubleFESerialize;
 import org.zxc.service.provider.CustomerDoubleFlagSerialize;
 import org.zxc.service.provider.CustomerDoubleSerialize;
@@ -18,42 +19,40 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
  * @author david
  * 2022年1月1日
  */
+@JsonSerialize(using = CandleArrayJsonSerializer.class)
 public class CandleEntry implements Serializable {
 
 	/**
 	 * 时间
 	 */
-	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+//	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
 	private Date time;
 
-//	/** 精度 */
-//	private DecimalFormat df = new DecimalFormat("#.00");
-
 	/** shadow-high value */
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double mShadowHigh = 0f;
 
 	/** shadow-low value */
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double mShadowLow = 0f;
 
 	/** close value */
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double mClose = 0f;
 
 	/** open value */
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double mOpen = 0f;
 	/**
 	 * 成交量
 	 */
-	@JsonSerialize(using = CustomerDoubleFESerialize.class)
+//	@JsonSerialize(using = CustomerDoubleFESerialize.class)
 	private double volume =0f;
 
 	/**
 	 * 成交额
 	 */
-	@JsonSerialize(using = CustomerDoubleFESerialize.class)
+//	@JsonSerialize(using = CustomerDoubleFESerialize.class)
 	private double amount = 0f;
 
 	/**
@@ -69,56 +68,56 @@ public class CandleEntry implements Serializable {
 	private double y = 0f;
 
 	// KDJ 指标的三个属性
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double k;
 	
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double d;
 	
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double j;
 	
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double m;
 
 	// boll指标三个属性
-	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double mb;
 	
-	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double up;
 	
-	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double dn;
 
 //	5日、10日、20日、30日、60日日均线
-	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double ma5;
 	
-	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double ma10;
 	
-	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double ma20;
 	
-	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double ma30;
 	
-	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleFlagSerialize.class)
 	private double ma60;
 
 //	ema
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double ema;
 
 //	macd
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double dif;
 	
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double dea;
 	
-	@JsonSerialize(using = CustomerDoubleSerialize.class)
+//	@JsonSerialize(using = CustomerDoubleSerialize.class)
 	private double macd;
 
 
