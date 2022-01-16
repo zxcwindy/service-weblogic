@@ -5,6 +5,9 @@ import static org.zxc.service.stock.Constans.STOCK_DB_NAME;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -48,7 +51,7 @@ import org.zxc.service.util.Arithmetic;
  * 2022年1月1日
  */
 @Service
-public class BaoStockKpiService extends LogService{
+public class StockKpiService extends LogService{
 
 	private List<String> codeList;
 
@@ -57,6 +60,8 @@ public class BaoStockKpiService extends LogService{
 	private static Map<Period, String[]> periodMap = new HashMap<>();
 
 	private static final String CACHE_NAME = "stock-cache";
+	
+	private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 	private boolean isLogin = false;
 
@@ -70,7 +75,7 @@ public class BaoStockKpiService extends LogService{
 				ResourcePoolsBuilder.newResourcePoolsBuilder()
 		    .heap(12, EntryUnit.ENTRIES)
 		    .disk(1024, MemoryUnit.MB)
-		    ).withExpiry(Expirations.timeToLiveExpiration(Duration.of(4, TimeUnit.HOURS))).build());
+		    ).withExpiry(Expirations.timeToLiveExpiration(Duration.of(8, TimeUnit.HOURS))).build());
 	}
 
 	private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(5, 10, 1000, TimeUnit.MILLISECONDS,
@@ -87,8 +92,8 @@ public class BaoStockKpiService extends LogService{
 	
 	@PostConstruct
 	private void init(){
-		PERIOD_DATA_FETCHER.put(Period.M30, SourceEnum.BaoStock);
-		PERIOD_DATA_FETCHER.put(Period.Day, SourceEnum.BaoStock);
+		PERIOD_DATA_FETCHER.put(Period.M30, SourceEnum.Sina);
+		PERIOD_DATA_FETCHER.put(Period.Day, SourceEnum.Tushare);
 		PERIOD_DATA_FETCHER.put(Period.Week, SourceEnum.BaoStock);
 		PERIOD_DATA_FETCHER.put(Period.Month, SourceEnum.BaoStock);
 		updatePeriod();
@@ -123,13 +128,13 @@ public class BaoStockKpiService extends LogService{
 		}
 	}
 
-//	@Scheduled(cron = "0 15 19 * * 1-5")
+	@Scheduled(cron = "0 15 18 * * 1-5")
 	public void updateData() {
 		scheduleLog = "";
 		updatePeriod();
 		updatetStockList();
 		login();
-		log(new Date().toString() + " begin refresh");
+		log(dtf.format(LocalDateTime.now()) + " begin refresh");
 		errorList = new ArrayList<>();
 		this.codeList.stream().forEach(code -> {
 			try {
@@ -146,7 +151,7 @@ public class BaoStockKpiService extends LogService{
 				e.printStackTrace();
 			}
 		});
-		log(new Date().toString() + " end refresh");
+		log(dtf.format(LocalDateTime.now()) + " end refresh");
 		logout();
 	}
 	

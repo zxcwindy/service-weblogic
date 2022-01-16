@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.zxc.service.datasource.SourceEnum;
-import org.zxc.service.service.BaoStockKpiService;
+import org.zxc.service.service.StockKpiService;
 import org.zxc.service.stock.CandleEntry;
 import org.zxc.service.stock.Period;
 
@@ -21,29 +21,31 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 
 @Controller
-@RequestMapping("/api/baostockkpi")
-public class BaoStockKpiResource {
+@RequestMapping("/api/stockkpi")
+public class StockKpiResource {
 	
 	@Autowired
-	private BaoStockKpiService stockKpiService;
+	private StockKpiService stockKpiService;
 
 	@RequestMapping(value= "/refreshAll",method = RequestMethod.GET)
 	@ResponseBody
 	public void refreshAll() {
-		stockKpiService.updateData();
+		new Thread( () -> {
+			stockKpiService.updateData();
+		}).start();
 	}
 	
 	@RequestMapping(value= "/fetchers",method = RequestMethod.GET)
 	@ResponseBody
 	public Map<Period,SourceEnum> getPeriodDataFetcher() {
-		return BaoStockKpiService.getPeriodDataFetcher();
+		return StockKpiService.getPeriodDataFetcher();
 	}
 	
 	@RequestMapping(value= "/fetchers",method = RequestMethod.POST)
 	@ResponseBody
 	public Map<Period,SourceEnum> updatePeriodDataFetcher(@RequestParam Period period,@RequestParam SourceEnum source) {
-		BaoStockKpiService.getPeriodDataFetcher().put(period, source);
-		return BaoStockKpiService.getPeriodDataFetcher();
+		StockKpiService.getPeriodDataFetcher().put(period, source);
+		return StockKpiService.getPeriodDataFetcher();
 	}
 //	
 //	@RequestMapping(value= "/errorCode",method = RequestMethod.GET)
