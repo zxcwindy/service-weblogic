@@ -1,6 +1,6 @@
 package org.zxc.service.service;
 
-import static org.zxc.service.stock.Constans.BAO_DATA_URL;
+import static org.zxc.service.datasource.BaoStockDataFetcher.BAO_DATA_URL;
 import static org.zxc.service.stock.Constans.STOCK_DB_NAME;
 
 import java.io.IOException;

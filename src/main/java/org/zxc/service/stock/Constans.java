@@ -23,11 +23,6 @@ public class Constans {
 	public static final int MIN_LENGTH = 8;
 	
 	/**
-	 * 盘后周期数据接口
-	 */
-	public static final String BAO_DATA_URL = "http://127.0.0.1:5551/baostock/";
-	
-	/**
 	 * 数据库
 	 */
 	public static final String STOCK_DB_NAME = "pyspider";

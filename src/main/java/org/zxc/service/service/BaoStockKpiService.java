@@ -1,11 +1,9 @@
 package org.zxc.service.service;
 
-import static org.zxc.service.stock.Constans.BAO_DATA_URL;
 import static org.zxc.service.stock.Constans.STOCK_DB_NAME;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -21,6 +19,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.lang.StringUtils;
 import org.ehcache.CacheManager;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
@@ -35,6 +35,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.zxc.service.datasource.DataFetcher;
+import org.zxc.service.datasource.DataFetcherFactory;
+import org.zxc.service.datasource.SourceEnum;
 import org.zxc.service.stock.CandleEntry;
 import org.zxc.service.stock.Period;
 import org.zxc.service.util.Arithmetic;
@@ -73,12 +76,29 @@ public class BaoStockKpiService extends LogService{
 	private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(5, 10, 1000, TimeUnit.MILLISECONDS,
 			new LinkedBlockingQueue<Runnable>(), Executors.defaultThreadFactory(),
 			new ThreadPoolExecutor.AbortPolicy());
-
-	@Autowired
-	private RestTemplate restClient;
-
+	
 	@Autowired
 	private DBDataService<Map> dbDataService;
+	
+	@Autowired
+	private DataFetcherFactory dataFetcherFactory;
+	
+	private static final Map<Period,SourceEnum>  PERIOD_DATA_FETCHER = new HashMap<>();
+	
+	@PostConstruct
+	private void init(){
+		PERIOD_DATA_FETCHER.put(Period.M30, SourceEnum.BaoStock);
+		PERIOD_DATA_FETCHER.put(Period.Day, SourceEnum.BaoStock);
+		PERIOD_DATA_FETCHER.put(Period.Week, SourceEnum.BaoStock);
+		PERIOD_DATA_FETCHER.put(Period.Month, SourceEnum.BaoStock);
+		updatePeriod();
+	}
+	
+	public static Map<Period, SourceEnum> getPeriodDataFetcher() {
+		return PERIOD_DATA_FETCHER;
+	}
+
+
 
 	/**
 	 * 优先从缓存中取数据，包含计算结果的api
@@ -93,9 +113,6 @@ public class BaoStockKpiService extends LogService{
 			return (List<CandleEntry>) obj;
 		}else{
 			try {
-				if(!isLogin){
-					login();
-				}
 				List<CandleEntry> entryList = new FetchDataRunnable(code,period).call();
 				getCache().put(code+period, (ArrayList<CandleEntry>)entryList);
 				return entryList;
@@ -132,20 +149,26 @@ public class BaoStockKpiService extends LogService{
 		log(new Date().toString() + " end refresh");
 		logout();
 	}
-
+	
 	public void login(){
-		this.restClient.getForEntity(BAO_DATA_URL+"login",String.class);
+		getDataFetcher(Period.M30).login();
+		getDataFetcher(Period.Day).login();
+		getDataFetcher(Period.Week).login();
+		getDataFetcher(Period.Month).login();
 		updatePeriod();
 		this.isLogin = true;
 	}
-
-	@Scheduled(cron = "0 15 1 * * 1-7")
+	
 	public void logout(){
 		this.isLogin = false;
-		this.restClient.getForEntity(BAO_DATA_URL+"logout",String.class);
+		getDataFetcher(Period.M30).logout();
+		getDataFetcher(Period.Day).logout();
+		getDataFetcher(Period.Week).logout();
+		getDataFetcher(Period.Month).logout();
 	}
 
-	private void updatePeriod() {
+	@Scheduled(cron = "0 1 0 * * ?")
+	public void updatePeriod() {
 		periodMap.put(Period.M30, calcPeriodDate(Period.M30,-60));
 		periodMap.put(Period.Day, calcPeriodDate(Period.Day,-450));
 		periodMap.put(Period.Week, calcPeriodDate(Period.Week, -64 * 7 * 4));
@@ -182,6 +205,10 @@ public class BaoStockKpiService extends LogService{
 	private static org.ehcache.Cache<String, Serializable> getCache(){
 		return CACHE_MANAGER.getCache(CACHE_NAME, String.class, Serializable.class);
 	}
+	
+	private DataFetcher getDataFetcher(Period period){
+		return dataFetcherFactory.getDataFetcher(PERIOD_DATA_FETCHER.get(period));
+	} 
 
 	private class FetchDataRunnable implements Callable<List<CandleEntry>> {
 
@@ -221,16 +248,12 @@ public class BaoStockKpiService extends LogService{
 		}
 
 		private List<CandleEntry> getBaseData(){
-			String dateFormat   = "yyyy-MM-dd";
-			if(Period.M30.equals(period)){
-				dateFormat   = "yyyyMMddHHmmssSSS";
-			}
-			List<CandleEntry> entryList = getOriginData(period, dateFormat,periodMap.get(period)[1],periodMap.get(period)[0]);
+			List<CandleEntry> entryList = getOriginData(period, periodMap.get(period)[1],periodMap.get(period)[0]);
 
 //			周和月时需要手动计算当前的值
 			if(Period.Week.equals(period) || Period.Month.equals(period)){
 				String[] dates = calcPeriodDate(Period.Day,-40);
-				List<CandleEntry> entryDayList =getOriginData(Period.Day, dateFormat,dates[1],dates[0]);
+				List<CandleEntry> entryDayList =getOriginData(Period.Day, dates[1],dates[0]);
 				int daySize = entryDayList.size();
 				CandleEntry lastEntry =  null;
 				if(Period.Week.equals(period)){
@@ -255,30 +278,8 @@ public class BaoStockKpiService extends LogService{
 		 * @param endDate
 		 * @return
 		 */
-		private List<CandleEntry> getOriginData(Period period, String format,String startDate, String endDate) {
-			ResponseEntity<Map> responseData = restClient.getForEntity(
-					BAO_DATA_URL + "item/" + code + "?"
-							+ buildParam(period.toString(), startDate, endDate),
-					Map.class);
-			List<List<String>> dataList = (List<List<String>>) responseData.getBody().get("data");
-
-			SimpleDateFormat sFormat = new SimpleDateFormat(format);
-			List<CandleEntry> result = new ArrayList<>();
-			boolean is30 = false;
-			if(dataList.size() > 0){
-				is30 = dataList.get(0).size() == 7;
-			}
-			for (List<String> strList : dataList) {
-				try {
-				    result.add(new CandleEntry(sFormat.parse(nvlNum(strList.get(0))), Double.parseDouble(nvlNum(strList.get(1))),
-							       Double.parseDouble(nvlNum(strList.get(2))), Double.parseDouble(nvlNum(strList.get(3))),
-							       Double.parseDouble(nvlNum(strList.get(4))),Double.parseDouble(nvlNum(strList.get(5))),
-							       Double.parseDouble(nvlNum(strList.get(6))),is30 ? 0 : Double.parseDouble(nvlNum(strList.get(7))),
-							       is30? 0: Double.parseDouble(nvlNum(strList.get(8)))));
-				} catch (ParseException e) {
-					e.printStackTrace();
-				}
-			}
+		private List<CandleEntry> getOriginData(Period period, String startDate, String endDate) {
+			List<CandleEntry> result = getDataFetcher(period).fetchData(period, code, startDate, endDate);
 			result.sort(new Comparator<CandleEntry>() {
 				@Override
 				public int compare(CandleEntry o1, CandleEntry o2) {
@@ -287,15 +288,7 @@ public class BaoStockKpiService extends LogService{
 			});
 			return result;
 		}
-
-		private String nvlNum(String num){
-			return StringUtils.isEmpty(num)? "0" : num;
-		}
-
-		private String buildParam(String type, String startDate, String endDate) {
-			return "&type=" + type + "&startDate=" + startDate + "&endDate=" + endDate;
-		}
-
+		
 		/**
 		 * 由于baostock的周和月数据需要等本周/月完结后再统计，为保证数据的实时性，需要手动计算当周/月的数据．
 		 * @param entryDayList
