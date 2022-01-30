@@ -6,7 +6,6 @@ import java.io.Serializable;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -24,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.commons.lang.StringUtils;
 import org.ehcache.CacheManager;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
 import org.ehcache.config.builders.CacheManagerBuilder;
@@ -34,12 +32,11 @@ import org.ehcache.config.units.MemoryUnit;
 import org.ehcache.expiry.Duration;
 import org.ehcache.expiry.Expirations;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.zxc.service.datasource.DataFetcher;
 import org.zxc.service.datasource.DataFetcherFactory;
+import org.zxc.service.datasource.SinaDataFetcher;
 import org.zxc.service.datasource.SourceEnum;
 import org.zxc.service.stock.CandleEntry;
 import org.zxc.service.stock.Period;
@@ -73,9 +70,9 @@ public class StockKpiService extends LogService{
 		CACHE_MANAGER.createCache(CACHE_NAME, CacheConfigurationBuilder.newCacheConfigurationBuilder(
 				String.class, Serializable.class,
 				ResourcePoolsBuilder.newResourcePoolsBuilder()
-		    .heap(12, EntryUnit.ENTRIES)
-		    .disk(1024, MemoryUnit.MB)
-		    ).withExpiry(Expirations.timeToLiveExpiration(Duration.of(8, TimeUnit.HOURS))).build());
+		    .heap(1024, MemoryUnit.MB)
+		    .disk(2048, MemoryUnit.MB)
+		    ).withExpiry(Expirations.timeToLiveExpiration(Duration.of(72, TimeUnit.HOURS))).build());//由于1-5更新时会自动清理缓存，故将缓存时间设置为3天，覆盖周末
 	}
 
 	private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(5, 10, 1000, TimeUnit.MILLISECONDS,
@@ -133,18 +130,36 @@ public class StockKpiService extends LogService{
 		scheduleLog = "";
 		updatePeriod();
 		updatetStockList();
+		getCache().clear();
 		login();
 		log(dtf.format(LocalDateTime.now()) + " begin refresh");
 		errorList = new ArrayList<>();
 		this.codeList.stream().forEach(code -> {
 			try {
-				Future<List<CandleEntry>> m30 = EXECUTOR.submit(new FetchDataRunnable(code,Period.M30));
-				Future<List<CandleEntry>> day = EXECUTOR.submit(new FetchDataRunnable(code,Period.Day));
-				Future<List<CandleEntry>> week = EXECUTOR.submit(new FetchDataRunnable(code,Period.Week));
+				Future<List<CandleEntry>> m30 = null;
+				Future<List<CandleEntry>> day = null;
+				Future<List<CandleEntry>> week = null;
+//				避免由于访问次数太多被封掉权限，sina数据不做定时更新，只做实时获取
+				 if ( !(getDataFetcher(Period.M30) instanceof SinaDataFetcher)) {
+					 m30 = EXECUTOR.submit(new FetchDataRunnable(code,Period.M30));
+				}
+				 if ( !(getDataFetcher(Period.Day) instanceof SinaDataFetcher)) {
+					 day = EXECUTOR.submit(new FetchDataRunnable(code,Period.Day));	 
+				}
+				 if ( !(getDataFetcher(Period.Week) instanceof SinaDataFetcher)) {
+					 week = EXECUTOR.submit(new FetchDataRunnable(code,Period.Week));	 
+					}
 				Future<List<CandleEntry>> month = EXECUTOR.submit(new FetchDataRunnable(code,Period.Month));
-				getCache().put(code+Period.M30, (ArrayList<CandleEntry>)m30.get());
-				getCache().put(code+Period.Day, (ArrayList<CandleEntry>)day.get());
-				getCache().put(code+Period.Week, (ArrayList<CandleEntry>)week.get());
+				
+				if(m30 != null){
+					getCache().put(code+Period.M30, (ArrayList<CandleEntry>)m30.get());
+				}
+				if(day != null){
+					getCache().put(code+Period.Day, (ArrayList<CandleEntry>)day.get());
+				}
+				if(week != null){
+					getCache().put(code+Period.Week, (ArrayList<CandleEntry>)week.get());	
+				}
 				getCache().put(code+Period.Month, (ArrayList<CandleEntry>)month.get());
 			} catch (Exception e) {
 				errorList.add(code);
@@ -176,8 +191,8 @@ public class StockKpiService extends LogService{
 	public void updatePeriod() {
 		periodMap.put(Period.M30, calcPeriodDate(Period.M30,-60));
 		periodMap.put(Period.Day, calcPeriodDate(Period.Day,-450));
-		periodMap.put(Period.Week, calcPeriodDate(Period.Week, -64 * 7 * 4));
-		periodMap.put(Period.Month, calcPeriodDate(Period.Month,-365 * 6 * 4));
+		periodMap.put(Period.Week, calcPeriodDate(Period.Week, -64 *  7 * 5));
+		periodMap.put(Period.Month, calcPeriodDate(Period.Month,-365 * 7 * 4));
 	}
 
 	private String[] calcPeriodDate(Period period,int periodNum) {
