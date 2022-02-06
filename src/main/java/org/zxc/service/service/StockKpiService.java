@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -61,19 +62,21 @@ public class StockKpiService extends LogService{
 	private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 	private boolean isLogin = false;
+	
+	private static final ConcurrentHashMap<String, List<CandleEntry>> CACHE_MANAGER = new ConcurrentHashMap<>();
 
-	private static final CacheManager CACHE_MANAGER = CacheManagerBuilder.newCacheManagerBuilder()
-		.with(CacheManagerBuilder.persistence(System.getProperty("java.io.tmpdir")+ "/" + CACHE_NAME))
-		.build(true);
-
-	static{
-		CACHE_MANAGER.createCache(CACHE_NAME, CacheConfigurationBuilder.newCacheConfigurationBuilder(
-				String.class, Serializable.class,
-				ResourcePoolsBuilder.newResourcePoolsBuilder()
-		    .heap(1024, MemoryUnit.MB)
-		    .disk(2048, MemoryUnit.MB)
-		    ).withExpiry(Expirations.timeToLiveExpiration(Duration.of(72, TimeUnit.HOURS))).build());//由于1-5更新时会自动清理缓存，故将缓存时间设置为3天，覆盖周末
-	}
+//	private static final CacheManager CACHE_MANAGER = CacheManagerBuilder.newCacheManagerBuilder()
+//		.with(CacheManagerBuilder.persistence(System.getProperty("java.io.tmpdir")+ "/" + CACHE_NAME))
+//		.build(true);
+//
+//	static{
+//		CACHE_MANAGER.createCache(CACHE_NAME, CacheConfigurationBuilder.newCacheConfigurationBuilder(
+//				String.class, Serializable.class,
+//				ResourcePoolsBuilder.newResourcePoolsBuilder()
+//		    .heap(1024, MemoryUnit.MB)
+//		    .disk(2048, MemoryUnit.MB)
+//		    ).withExpiry(Expirations.timeToLiveExpiration(Duration.of(72, TimeUnit.HOURS))).build());//由于1-5更新时会自动清理缓存，故将缓存时间设置为3天，覆盖周末
+//	}
 
 	private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(5, 10, 1000, TimeUnit.MILLISECONDS,
 			new LinkedBlockingQueue<Runnable>(), Executors.defaultThreadFactory(),
@@ -110,7 +113,7 @@ public class StockKpiService extends LogService{
 	 * @return
 	 */
 	public List<CandleEntry> queryData(String code,Period period,boolean refresh){
-		Serializable obj =  getCache().get(code+period);
+		List<CandleEntry> obj =  getCache().get(code+period);
 		if(obj != null && !refresh && ((List<CandleEntry>) obj).size()>0){
 			return (List<CandleEntry>) obj;
 		}else{
@@ -222,8 +225,12 @@ public class StockKpiService extends LogService{
 		return codeList;
 	}
 
-	private static org.ehcache.Cache<String, Serializable> getCache(){
-		return CACHE_MANAGER.getCache(CACHE_NAME, String.class, Serializable.class);
+//	private static org.ehcache.Cache<String, Serializable> getCache(){
+//		return CACHE_MANAGER.getCache(CACHE_NAME, String.class, Serializable.class);
+//	}
+	
+	private static ConcurrentHashMap<String,List<CandleEntry>> getCache(){
+		return CACHE_MANAGER;
 	}
 	
 	private DataFetcher getDataFetcher(Period period){
