@@ -38,7 +38,7 @@ public class SinaDataFetcher implements DataFetcher {
 				List.class);
 		List<Map<String,String>> dataList = (List<Map<String,String>>) responseData.getBody();
 
-		SimpleDateFormat sFormat = new SimpleDateFormat(Period.M30.equals(period)? "yyyy-MM-dd HH:mm:ss" : dateFormat);
+		SimpleDateFormat sFormat = new SimpleDateFormat(period.toString().matches("[1-9]\\d*")? "yyyy-MM-dd HH:mm:ss" : dateFormat);
 		List<CandleEntry> result = new ArrayList<>();
 		for (Map<String,String> strMap : dataList) {
 			try {
@@ -69,7 +69,11 @@ public class SinaDataFetcher implements DataFetcher {
 	private String buildParam(Period period,String code, String startDate, String endDate) {
 		String codeParam = "&symbol=" + code;
 		switch(period){
+			case M5 : return codeParam + "&scale=5";
+			case M15 : return codeParam + "&scale=15";
 			case M30 : return codeParam + "&scale=30";
+			case M60 : return codeParam + "&scale=60";
+			case M120 : return codeParam + "&scale=120";
 			case Day : return codeParam + "&scale=240";
 			case Week : return codeParam + "&scale=1200";
 			default: return codeParam + "&scale=240";

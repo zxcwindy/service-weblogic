@@ -57,7 +57,7 @@ public class StockKpiService extends LogService{
 
 	private static Map<Period, String[]> periodMap = new HashMap<>();
 
-	private static final String CACHE_NAME = "stock-cache";
+//	private static final String CACHE_NAME = "stock-cache";
 	
 	private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -92,7 +92,11 @@ public class StockKpiService extends LogService{
 	
 	@PostConstruct
 	private void init(){
+		PERIOD_DATA_FETCHER.put(Period.M5, SourceEnum.Sina);
+		PERIOD_DATA_FETCHER.put(Period.M15, SourceEnum.Sina);
 		PERIOD_DATA_FETCHER.put(Period.M30, SourceEnum.Sina);
+		PERIOD_DATA_FETCHER.put(Period.M60, SourceEnum.Sina);
+		PERIOD_DATA_FETCHER.put(Period.M120, SourceEnum.Sina);
 		PERIOD_DATA_FETCHER.put(Period.Day, SourceEnum.Tushare);
 		PERIOD_DATA_FETCHER.put(Period.Week, SourceEnum.BaoStock);
 		PERIOD_DATA_FETCHER.put(Period.Month, SourceEnum.BaoStock);
@@ -174,6 +178,7 @@ public class StockKpiService extends LogService{
 	}
 	
 	public void login(){
+//		m5-m120分钟级暂时都用sina，不用登录
 		getDataFetcher(Period.M30).login();
 		getDataFetcher(Period.Day).login();
 		getDataFetcher(Period.Week).login();
@@ -192,7 +197,11 @@ public class StockKpiService extends LogService{
 
 	@Scheduled(cron = "0 1 0 * * ?")
 	public void updatePeriod() {
+		periodMap.put(Period.M5, calcPeriodDate(Period.M5,-60));
+		periodMap.put(Period.M15, calcPeriodDate(Period.M15,-60));
 		periodMap.put(Period.M30, calcPeriodDate(Period.M30,-60));
+		periodMap.put(Period.M60, calcPeriodDate(Period.M60,-60));
+		periodMap.put(Period.M120, calcPeriodDate(Period.M120,-60));
 		periodMap.put(Period.Day, calcPeriodDate(Period.Day,-450));
 		periodMap.put(Period.Week, calcPeriodDate(Period.Week, -64 *  7 * 5));
 		periodMap.put(Period.Month, calcPeriodDate(Period.Month,-365 * 7 * 4));

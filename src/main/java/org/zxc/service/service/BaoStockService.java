@@ -66,7 +66,7 @@ public class BaoStockService extends LogService{
 	@Autowired
 	private DBDataService<Map> dbDataService;
 
-	@Scheduled(cron = "0 15 18 * * 1-5")
+//	@Scheduled(cron = "0 15 18 * * 1-5")
 	public void updateData() {
 		scheduleLog = "";
 		updatePeriod();
