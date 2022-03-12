@@ -2,7 +2,6 @@ package org.zxc.service.service;
 
 import static org.zxc.service.stock.Constans.STOCK_DB_NAME;
 
-import java.io.Serializable;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -92,6 +91,7 @@ public class StockKpiService extends LogService{
 	
 	@PostConstruct
 	private void init(){
+		PERIOD_DATA_FETCHER.put(Period.M1, SourceEnum.Sina);
 		PERIOD_DATA_FETCHER.put(Period.M5, SourceEnum.Sina);
 		PERIOD_DATA_FETCHER.put(Period.M15, SourceEnum.Sina);
 		PERIOD_DATA_FETCHER.put(Period.M30, SourceEnum.Sina);
@@ -197,6 +197,7 @@ public class StockKpiService extends LogService{
 
 	@Scheduled(cron = "0 1 0 * * ?")
 	public void updatePeriod() {
+		periodMap.put(Period.M1, calcPeriodDate(Period.M1,-60));
 		periodMap.put(Period.M5, calcPeriodDate(Period.M5,-60));
 		periodMap.put(Period.M15, calcPeriodDate(Period.M15,-60));
 		periodMap.put(Period.M30, calcPeriodDate(Period.M30,-60));
@@ -315,7 +316,17 @@ public class StockKpiService extends LogService{
 		 * @return
 		 */
 		private List<CandleEntry> getOriginData(Period period, String startDate, String endDate) {
-			List<CandleEntry> result = getDataFetcher(period).fetchData(period, code, startDate, endDate);
+			List<CandleEntry> result = null;
+//			当查询的代码为三大指数时，采用新浪接口查询日级别以下的数据，baostock查询周级别以上的数据。
+			if(isZhishu(code)){
+				if(Period.Week.equals(period) || Period.Month.equals(period)){
+					result = getDataFetcher(Period.Month).fetchData(period, code, startDate, endDate);
+				}else{
+					result = getDataFetcher(Period.M30).fetchData(period, code, startDate, endDate);
+				}
+			}else{
+				result = getDataFetcher(period).fetchData(period, code, startDate, endDate);
+			}
 			result.sort(new Comparator<CandleEntry>() {
 				@Override
 				public int compare(CandleEntry o1, CandleEntry o2) {
@@ -323,6 +334,10 @@ public class StockKpiService extends LogService{
 				}
 			});
 			return result;
+		}
+		
+		private boolean isZhishu(String code){
+			return "sh000001,sz399001,sz399006".contains(code);
 		}
 		
 		/**

@@ -69,6 +69,7 @@ public class SinaDataFetcher implements DataFetcher {
 	private String buildParam(Period period,String code, String startDate, String endDate) {
 		String codeParam = "&symbol=" + code;
 		switch(period){
+			case M1 : return codeParam + "&scale=1";
 			case M5 : return codeParam + "&scale=5";
 			case M15 : return codeParam + "&scale=15";
 			case M30 : return codeParam + "&scale=30";
