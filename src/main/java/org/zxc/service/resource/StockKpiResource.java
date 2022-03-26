@@ -7,13 +7,16 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.zxc.service.datasource.SourceEnum;
+import org.zxc.service.resource.vo.ConditionVo;
 import org.zxc.service.service.StockKpiService;
 import org.zxc.service.stock.CandleEntry;
+import org.zxc.service.stock.Condition;
 import org.zxc.service.stock.Period;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -70,5 +73,11 @@ public class StockKpiResource {
 	@ResponseBody
 	public List<CandleEntry> queryM(@RequestParam String code,@RequestParam Period period ,@RequestParam(required=false) boolean refresh) throws JsonParseException, JsonMappingException, SQLException, IOException{
 		return stockKpiService.queryData(code, period, refresh);
+	}
+	
+	@RequestMapping(value= "/findCode",method = RequestMethod.GET)
+	@ResponseBody
+	public List<String> findByCondition(@RequestBody ConditionVo condVo) {
+		return stockKpiService.findCodeByCond(condVo.getCondition());
 	}
 }
