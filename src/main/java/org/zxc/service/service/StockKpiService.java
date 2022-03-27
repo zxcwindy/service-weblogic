@@ -239,7 +239,8 @@ public class StockKpiService extends LogService {
 	 */
 	public List<String> findCodeByCond(String condition) {
 		return codeList.stream().map((e -> {
-			boolean result = EvalutorHelper.eval(condition, queryData(e,Period.M30,false),
+//			 queryData(e,Period.M30,false) 30由于反抓取的原因的暂时不取数据
+			boolean result = EvalutorHelper.eval(condition,null,
 					getCache().get(e + Period.Day.toString()), getCache().get(e + Period.Week.toString()),
 					getCache().get(e + Period.Month.toString()));
 			return result ? e : null;

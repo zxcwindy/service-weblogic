@@ -77,7 +77,7 @@ public class StockKpiResource {
 	
 	@RequestMapping(value= "/findCode",method = RequestMethod.GET)
 	@ResponseBody
-	public List<String> findByCondition(@RequestBody ConditionVo condVo) {
-		return stockKpiService.findCodeByCond(condVo.getCondition());
+	public List<String> findByCondition(@RequestParam String condition) {
+		return stockKpiService.findCodeByCond(condition);
 	}
 }
