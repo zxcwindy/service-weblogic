@@ -93,20 +93,29 @@ public class CandleEntryListener extends FilterBaseListener {
 
 	@Override
 	public void exitMulDiv(MulDivContext ctx) {
+		ctx.expr(0).enterRule(this);
+		ctx.expr(1).enterRule(this);
+		double rightValue = numStack.pop();
+		double leftValue = numStack.pop();
+		
 		if (ctx.op.getType() == FilterParser.MUL) {
-			numStack.push(parseNum(ctx.expr(0).getText()) * parseNum(ctx.expr(1).getText()));
+			numStack.push(leftValue * rightValue);
 		} else {
-			numStack.push(parseNum(ctx.expr(1).getText()) != 0
-					? parseNum(ctx.expr(0).getText()) / parseNum(ctx.expr(1).getText()) : 0);
+			numStack.push(rightValue != 0 ? leftValue/ rightValue : 0);
 		}
 	}
 
 	@Override
 	public void exitAddSub(AddSubContext ctx) {
+		ctx.expr(0).enterRule(this);
+		ctx.expr(1).enterRule(this);
+		double rightValue = numStack.pop();
+		double leftValue = numStack.pop();
+		
 		if (ctx.op.getType() == FilterParser.ADD) {
-			numStack.push(Double.parseDouble(ctx.expr(0).getText()) + Double.parseDouble(ctx.expr(1).getText()));
+			numStack.push(leftValue + rightValue);
 		} else {
-			numStack.push(parseNum(ctx.expr(0).getText()) - parseNum(ctx.expr(1).getText()));
+			numStack.push(leftValue - rightValue);
 		}
 	}
 
