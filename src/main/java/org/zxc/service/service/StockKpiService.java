@@ -4,7 +4,9 @@ import static org.zxc.service.stock.Constans.STOCK_DB_NAME;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -25,14 +27,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
-import org.ehcache.CacheManager;
-import org.ehcache.config.builders.CacheConfigurationBuilder;
-import org.ehcache.config.builders.CacheManagerBuilder;
-import org.ehcache.config.builders.ResourcePoolsBuilder;
-import org.ehcache.config.units.EntryUnit;
-import org.ehcache.config.units.MemoryUnit;
-import org.ehcache.expiry.Duration;
-import org.ehcache.expiry.Expirations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -40,10 +34,10 @@ import org.zxc.service.datasource.DataFetcher;
 import org.zxc.service.datasource.DataFetcherFactory;
 import org.zxc.service.datasource.SinaDataFetcher;
 import org.zxc.service.datasource.SourceEnum;
+import org.zxc.service.datasource.TencentDataFetcher;
+import org.zxc.service.exception.StockException;
 import org.zxc.service.stock.CandleEntry;
-import org.zxc.service.stock.Condition;
 import org.zxc.service.stock.Period;
-import org.zxc.service.stock.CandleEntryFuntion;
 import org.zxc.service.util.Arithmetic;
 import org.zxc.service.util.EvalutorHelper;
 
@@ -96,6 +90,12 @@ public class StockKpiService extends LogService {
 	@Autowired
 	private DataFetcherFactory dataFetcherFactory;
 
+	@Autowired
+	private TencentDataFetcher tencentDataFetcher;
+
+	/**
+	 * 存放周期和对应的数据源
+	 */
 	private static final Map<Period, SourceEnum> PERIOD_DATA_FETCHER = new HashMap<>();
 
 	@PostConstruct
@@ -239,12 +239,159 @@ public class StockKpiService extends LogService {
 	 */
 	public List<String> findCodeByCond(String condition) {
 		return codeList.stream().map((e -> {
-//			 queryData(e,Period.M30,false) 30由于反抓取的原因的暂时不取数据
-			boolean result = EvalutorHelper.eval(condition,null,
-					getCache().get(e + Period.Day.toString()), getCache().get(e + Period.Week.toString()),
-					getCache().get(e + Period.Month.toString()));
+			// queryData(e,Period.M30,false) 30由于反抓取的原因的暂时不取数据
+			boolean result = EvalutorHelper.eval(condition, null, getCache().get(e + Period.Day.toString()),
+					getCache().get(e + Period.Week.toString()), getCache().get(e + Period.Month.toString()));
 			return result ? e : null;
 		})).filter(t -> t != null).collect(Collectors.toList());
+	}
+
+	/**
+	 * 盘中采用腾讯接口实时更新日、周、月数据，非交易日更新会出现异常计算
+	 */
+	public void updateRealTimeData() {
+		this.scheduleLog = "";
+		log(dtf.format(LocalDateTime.now()) + " 开始盘中更新");
+		Map<String, CandleEntry> dayCandleMap = tencentDataFetcher.fetchData(codeList);
+		for (String code : dayCandleMap.keySet()) {
+			CandleEntry lastDayEntry = dayCandleMap.get(code);
+			List<CandleEntry> cacheDayCandleList = getCache().get(code + Period.Day);
+			updateCacheList(cacheDayCandleList,lastDayEntry,Period.Day); //更新日缓存
+			
+			int daySize =  cacheDayCandleList.size();
+			CandleEntry lastWeekEntry = buildPeriodCandleEntry(cacheDayCandleList,
+					getFirstDayOfWeek(daySize > 0 ? cacheDayCandleList.get(daySize - 1).getTime() : null));
+			updateCacheList(getCache().get(code + Period.Week),lastWeekEntry,Period.Week); //更新周缓存
+			
+			CandleEntry lastMonthEntry = buildPeriodCandleEntry(cacheDayCandleList,
+					getFirstDayOfMonth(daySize > 0 ? cacheDayCandleList.get(daySize - 1).getTime() : null));
+			updateCacheList(getCache().get(code + Period.Month),lastMonthEntry,Period.Month); //更新月缓存
+		}
+		log(dtf.format(LocalDateTime.now()) + " 盘中更新结束");
+	}
+	
+	private void updateCacheList(List<CandleEntry> cacheCandleList,CandleEntry lastEntry,Period period){
+		if (cacheCandleList != null && cacheCandleList.size() > 0) {
+			int length = cacheCandleList.size();
+			CandleEntry nowEntry = cacheCandleList.get(length - 1);
+			// 这里判断仅做日期相等判断，不做是否交易日相等判断，所以在非交易日调用时会出现异常
+			switch (period) {
+			case Day:
+				if (convertLocaleDate(nowEntry.getTime()).equals(convertLocaleDate(lastEntry.getTime()))) {
+					cacheCandleList.set(length - 1, lastEntry);
+				}else{
+					cacheCandleList.add(lastEntry);
+				}
+				break;
+			case Week:
+				if (getFirstDayOfWeek(nowEntry.getTime()).equals(getFirstDayOfWeek((lastEntry.getTime())))) {
+					cacheCandleList.set(length - 1, lastEntry);
+				}else{
+					cacheCandleList.add(lastEntry);
+				}
+				break;
+			case Month:
+				if (convertLocaleDate(nowEntry.getTime()).getMonthValue() == convertLocaleDate(lastEntry.getTime()).getMonthValue()) {
+					cacheCandleList.set(length - 1, lastEntry);
+				}else{
+					cacheCandleList.add(lastEntry);
+				}
+				break;
+				default:
+					throw new StockException("不支持的实时更新周期类型");
+			}
+			
+			calcKpi(cacheCandleList);
+		}
+	}
+	
+	private LocalDate convertLocaleDate(Date date){
+		return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+	}
+	
+	/**
+	 * 由于baostock的周和月数据需要等本周/月完结后再统计，为保证数据的实时性，需要手动计算当周/月的数据．
+	 * 
+	 * @param entryDayList
+	 * @param beginDate
+	 * @param endDate
+	 * @return
+	 */
+	private CandleEntry buildPeriodCandleEntry(List<CandleEntry> entryDayList, Date beginDate) {
+		CandleEntry result = new CandleEntry();
+		List<CandleEntry> tempList = new ArrayList<>();
+		// 第一个元素是最后一天，最后一个元素是第一天
+		for (int i = entryDayList.size() - 1; i > -1; i--) {			
+			LocalDate tempLocalDate = entryDayList.get(i).getTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			LocalDate beginLocaleDate = beginDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			if (tempLocalDate.isEqual(beginLocaleDate)
+					|| tempLocalDate.isAfter(beginLocaleDate)) {
+				tempList.add(entryDayList.get(i));
+			} else {
+				break;
+			}
+		}
+		int length = tempList.size();
+		if (length > 0) {
+			result.setTime(tempList.get(0).getTime());
+			result.setClose(tempList.get(0).getClose());
+			result.setOpen(tempList.get(length - 1).getOpen());
+			result.setHigh(tempList.stream().max((a, b) -> {
+				return a.getHigh() > b.getHigh() ? 1 : -1;
+			}).get().getHigh());
+			result.setLow(tempList.stream().min((a, b) -> {
+				return a.getLow() > b.getLow() ? 1 : -1;
+			}).get().getLow());
+			result.setVolume(tempList.stream().mapToDouble(CandleEntry::getVolume).sum());
+			result.setAmount(tempList.stream().mapToDouble(CandleEntry::getAmount).sum());
+			if (length > 1) {
+				result.setPctChg(((result.getClose() - tempList.get(length - 1).getClose())
+						/ tempList.get(length - 1).getClose()) * 100);
+			}
+		}
+		return result;
+	}
+	
+	private void calcKpi(List<CandleEntry> entryList) {
+		// 计算ma
+		Arithmetic.calcMA(entryList, 5);
+		Arithmetic.calcMA(entryList, 10);
+		Arithmetic.calcMA(entryList, 20);
+		Arithmetic.calcMA(entryList, 30);
+		Arithmetic.calcMA(entryList, 60);
+		// 计算kdj
+		Arithmetic.calcKDJ(entryList, 9, 3, 3, 1);
+		// 计算macd
+		Arithmetic.calcMACD(entryList, 12, 26, 9);
+		// 计算布林
+		Arithmetic.calcMB(entryList, 20, 2);
+	}
+	
+	private Date getFirstDayOfWeek(Date date) {
+		Calendar cal = Calendar.getInstance();
+		if (date != null) {
+			cal.setTime(date);
+		}
+		int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+		cal.add(Calendar.DATE, dayOfWeek > 1 ? (dayOfWeek - 2) * -1 : 0);
+		resetDate(cal);
+		return cal.getTime();
+	}
+
+	private Date getFirstDayOfMonth(Date date) {
+		Calendar cal = Calendar.getInstance();
+		if (date != null) {
+			cal.setTime(date);
+		}
+		cal.set(Calendar.DAY_OF_MONTH, 1);
+		resetDate(cal);
+		return cal.getTime();
+	}
+	
+	private void resetDate(Calendar cal) {
+		cal.set(Calendar.HOUR_OF_DAY, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
 	}
 
 	private String[] calcPeriodDate(Period period, int periodNum) {
@@ -311,21 +458,6 @@ public class StockKpiService extends LogService {
 			return entryList;
 		}
 
-		private void calcKpi(List<CandleEntry> entryList) {
-			// 计算ma
-			Arithmetic.calcMA(entryList, 5);
-			Arithmetic.calcMA(entryList, 10);
-			Arithmetic.calcMA(entryList, 20);
-			Arithmetic.calcMA(entryList, 30);
-			Arithmetic.calcMA(entryList, 60);
-			// 计算kdj
-			Arithmetic.calcKDJ(entryList, 9, 3, 3, 1);
-			// 计算macd
-			Arithmetic.calcMACD(entryList, 12, 26, 9);
-			// 计算布林
-			Arithmetic.calcMB(entryList, 20, 2);
-		}
-
 		private List<CandleEntry> getBaseData() {
 			List<CandleEntry> entryList = getOriginData(period, periodMap.get(period)[1], periodMap.get(period)[0]);
 
@@ -383,73 +515,6 @@ public class StockKpiService extends LogService {
 
 		private boolean isZhishu(String code) {
 			return "sh000001,sz399001,sz399006".contains(code);
-		}
-
-		/**
-		 * 由于baostock的周和月数据需要等本周/月完结后再统计，为保证数据的实时性，需要手动计算当周/月的数据．
-		 * 
-		 * @param entryDayList
-		 * @param beginDate
-		 * @param endDate
-		 * @return
-		 */
-		private CandleEntry buildPeriodCandleEntry(List<CandleEntry> entryDayList, Date beginDate) {
-			CandleEntry result = new CandleEntry();
-			List<CandleEntry> tempList = new ArrayList<>();
-			// 第一个元素是最后一天，最后一个元素是第一天
-			for (int i = entryDayList.size() - 1; i > -1; i--) {
-				if (entryDayList.get(i).getTime().getTime() >= beginDate.getTime()) {
-					tempList.add(entryDayList.get(i));
-				} else {
-					break;
-				}
-			}
-			int length = tempList.size();
-			if (length > 0) {
-				result.setTime(tempList.get(0).getTime());
-				result.setClose(tempList.get(0).getClose());
-				result.setOpen(tempList.get(length - 1).getOpen());
-				result.setHigh(tempList.stream().max((a, b) -> {
-					return a.getHigh() > b.getHigh() ? 1 : -1;
-				}).get().getHigh());
-				result.setLow(tempList.stream().min((a, b) -> {
-					return a.getLow() > b.getLow() ? 1 : -1;
-				}).get().getLow());
-				result.setVolume(tempList.stream().mapToDouble(CandleEntry::getVolume).sum());
-				result.setAmount(tempList.stream().mapToDouble(CandleEntry::getAmount).sum());
-				if (length > 1) {
-					result.setPctChg(((result.getClose() - tempList.get(length - 1).getClose())
-							/ tempList.get(length - 1).getClose()) * 100);
-				}
-			}
-			return result;
-		}
-
-		private Date getFirstDayOfWeek(Date date) {
-			Calendar cal = Calendar.getInstance();
-			if (date != null) {
-				cal.setTime(date);
-			}
-			int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-			cal.add(Calendar.DATE, dayOfWeek > 1 ? (dayOfWeek - 2) * -1 : 0);
-			resetDate(cal);
-			return cal.getTime();
-		}
-
-		private Date getFirstDayOfMonth(Date date) {
-			Calendar cal = Calendar.getInstance();
-			if (date != null) {
-				cal.setTime(date);
-			}
-			cal.set(Calendar.DAY_OF_MONTH, 1);
-			resetDate(cal);
-			return cal.getTime();
-		}
-
-		private void resetDate(Calendar cal) {
-			cal.set(Calendar.HOUR_OF_DAY, 0);
-			cal.set(Calendar.MINUTE, 0);
-			cal.set(Calendar.SECOND, 0);
 		}
 	}
 }

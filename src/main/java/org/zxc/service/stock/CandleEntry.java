@@ -130,20 +130,18 @@ public class CandleEntry implements Serializable {
 		this.y = y;
 	}
 
-	/**
-	 * Constructor.
-	 *
-	 * @param x
-	 *            The value on the x-axis
-	 * @param shadowH
-	 *            The (shadow) high value
-	 * @param shadowL
-	 *            The (shadow) low value
-	 * @param open
-	 *            The open value
-	 * @param close
-	 *            The close value
-	 */
+	
+    /**
+     * @param time 时间
+     * @param shadowH 最高
+     * @param shadowL 最低
+     * @param open 开盘
+     * @param close 收盘
+     * @param volume 成交量
+     * @param amount 成交额
+     * @param turn 换手率
+     * @param pctChg 涨跌幅
+     */
     public CandleEntry(Date time,double shadowH, double shadowL, double open, double close,double volume,double amount ,double turn, double pctChg) {
 		this.time = time;
 		this.mShadowHigh = shadowH;

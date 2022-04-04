@@ -80,4 +80,12 @@ public class StockKpiResource {
 	public List<String> findByCondition(@RequestParam String condition) {
 		return stockKpiService.findCodeByCond(condition);
 	}
+	
+	@RequestMapping(value= "/updateNow",method = RequestMethod.GET)
+	@ResponseBody
+	public void updateNow() {
+		new Thread( () -> {
+			stockKpiService.updateRealTimeData();
+		}).start();
+	}
 }
