@@ -36,10 +36,10 @@ SUB : '-' ;
 
 ID  : DIGIT+ '.' ('30'|'d'|'w'|'m') '.' [a-zA-Z0-9]+ ;
 
-INT : DIGIT+ ;
+INT : '-'?DIGIT+ ;
 
-FLOAT : DIGIT+ '.' DIGIT*    // 匹配1. 39. 3.14159等等
-     | '.' DIGIT+           // 匹配.1 .14159
+FLOAT : '-'?DIGIT+ '.' DIGIT*    // 匹配1. 39. 3.14159等等
+     | '-'?'.' DIGIT+           // 匹配.1 .14159
      ;
 
 fragment

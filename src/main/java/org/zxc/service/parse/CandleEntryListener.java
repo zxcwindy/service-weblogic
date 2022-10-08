@@ -128,16 +128,32 @@ public class CandleEntryListener extends FilterBaseListener {
 		String attr = exprStrs[2];
 		switch (period) {
 		case "30":
-			numStack.push(CandleEntryFuntion.calc(m30CandleList.get(m30CandleList.size() - index), attr));
+			if(m30CandleList != null){
+				numStack.push(CandleEntryFuntion.calc(m30CandleList.get(m30CandleList.size() - index), attr));
+			}else{
+				numStack.push(0.0);
+			}
 			break;
 		case "d":
-			numStack.push(CandleEntryFuntion.calc(dayCandleList.get(dayCandleList.size() - index), attr));
+			if(dayCandleList != null){
+				numStack.push(CandleEntryFuntion.calc(dayCandleList.get(dayCandleList.size() - index), attr));
+			}else{
+				numStack.push(0.0);
+			}
 			break;
 		case "w":
-			numStack.push(CandleEntryFuntion.calc(weekCandleList.get(weekCandleList.size() - index), attr));
+			if(weekCandleList != null){
+				numStack.push(CandleEntryFuntion.calc(weekCandleList.get(weekCandleList.size() - index), attr));
+			}else{
+				numStack.push(0.0);
+			}
 			break;
 		case "m":
-			numStack.push(CandleEntryFuntion.calc(monthCandleList.get(monthCandleList.size() - index), attr));
+			if(monthCandleList != null){
+				numStack.push(CandleEntryFuntion.calc(monthCandleList.get(monthCandleList.size() - index), attr));
+			}else{
+				numStack.push(0.0);
+			}
 			break;
 		}
 	}

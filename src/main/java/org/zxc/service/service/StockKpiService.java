@@ -333,7 +333,11 @@ public class StockKpiService extends LogService {
 		}
 		int length = tempList.size();
 		if (length > 0) {
-			result.setTime(tempList.get(0).getTime());
+			Date tempDate = tempList.get(0).getTime();
+			tempDate.setHours(0);
+			tempDate.setMinutes(0);
+			tempDate.setSeconds(0);
+			result.setTime(tempDate);
 			result.setClose(tempList.get(0).getClose());
 			result.setOpen(tempList.get(length - 1).getOpen());
 			result.setHigh(tempList.stream().max((a, b) -> {
