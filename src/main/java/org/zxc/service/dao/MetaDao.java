@@ -22,7 +22,7 @@ public class MetaDao {
 	private static final Logger logger = Logger.getLogger(MetaDao.class);
 
 	private static final int LIMIT_NUM = 15;
-	
+
 	@Autowired
 	private Pool pool;
 
@@ -73,8 +73,9 @@ public class MetaDao {
 
 	public List<String> findColNames(ResultSetMetaData rsmd) throws SQLException {
 		List<String> list = new ArrayList<String>();
-		for (int i = 1; i <= rsmd.getColumnCount(); i++) {		
+		for (int i = 1; i <= rsmd.getColumnCount(); i++) {
 			list.add(rsmd.getTableName(i) + "." +rsmd.getColumnName(i));
+			// list.add(rsmd.getColumnName(i));
 		}
 		return list;
 	}
