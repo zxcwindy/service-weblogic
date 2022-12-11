@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.zxc</groupId>
 	<artifactId>service-weblogic</artifactId>
@@ -9,9 +8,14 @@
 
 	<repositories>
 		<repository>
+			<id>jcenter</id>
+			<name>JCenter repository</name>
+			<url>https://repo1.maven.org/maven2</url>
+		</repository>
+		<repository>
 			<id>MavenCentral</id>
 			<name>Maven repository</name>
-			<url>http://repo1.maven.org/maven2</url>
+			<url>https://repo1.maven.org/maven2</url>
 		</repository>
 		<repository>
 			<id>datanucleus</id>
@@ -42,7 +46,7 @@
 			<artifactId>log4j</artifactId>
 			<version>1.2.15</version>
 		</dependency>
-		
+
 		<!-- antlr4j -->
 		<dependency>
 			<groupId>org.antlr</groupId>
@@ -116,13 +120,7 @@
 		</dependency>
 		<!-- develop mode end -->
 
-		<!-- develop mode begin -->
-		<dependency>
-			<groupId>opensymphony</groupId>
-			<artifactId>sitemesh</artifactId>
-			<version>2.4.1</version>
-		</dependency>
-		<!-- develop mode end -->
+
 		<dependency>
 			<groupId>proxool</groupId>
 			<artifactId>proxool</artifactId>
@@ -170,7 +168,7 @@
 			<artifactId>commons-io</artifactId>
 			<version>2.4</version>
 		</dependency>
-		<!-- <dependency> <groupId>org.aspectj</groupId> <artifactId>aspectjrt</artifactId> 
+		<!-- <dependency> <groupId>org.aspectj</groupId> <artifactId>aspectjrt</artifactId>
 			<version>1.7.3</version> </dependency> -->
 		<dependency>
 			<groupId>com.oracle</groupId>
@@ -187,17 +185,17 @@
 			<artifactId>joinery-dataframe</artifactId>
 			<version>1.9</version>
 		</dependency>
-		<!-- <dependency> <groupId>com.ibm.db2java</groupId> <artifactId>db2java</artifactId> 
-			<version>1.0.0</version> </dependency> <dependency> <groupId>com.ibm.db2jcc</groupId> 
-			<artifactId>db2jcc</artifactId> <version>1.0.0</version> </dependency> <dependency> 
-			<groupId>com.ibm.license</groupId> <artifactId>db2jcc_license_cu</artifactId> 
+		<!-- <dependency> <groupId>com.ibm.db2java</groupId> <artifactId>db2java</artifactId>
+			<version>1.0.0</version> </dependency> <dependency> <groupId>com.ibm.db2jcc</groupId>
+			<artifactId>db2jcc</artifactId> <version>1.0.0</version> </dependency> <dependency>
+			<groupId>com.ibm.license</groupId> <artifactId>db2jcc_license_cu</artifactId>
 			<version>1.0.0</version> </dependency> -->
 		<dependency>
 			<groupId>ch.ethz.ganymed</groupId>
 			<artifactId>ganymed-ssh2</artifactId>
 			<version>build210</version>
 		</dependency>
-		<!-- <dependency> <groupId>com.asterdata</groupId> <artifactId>noarch-aster</artifactId> 
+		<!-- <dependency> <groupId>com.asterdata</groupId> <artifactId>noarch-aster</artifactId>
 			<version>1.0.0</version> </dependency> -->
 		<dependency>
 
@@ -220,7 +218,7 @@
 			<artifactId>dacp-crypto</artifactId>
 			<version>2.3.1</version>
 		</dependency>
-		<!-- 
+		<!--
 		<dependency>
 			<groupId>org.apache.phoenix</groupId>
 			<artifactId>phoenix-server-client</artifactId>
@@ -233,18 +231,18 @@
 			<version>9.3-1101-jdbc4</version>
 		</dependency>
 		<dependency>
-				<groupId>org.ehcache</groupId>
-				<artifactId>ehcache</artifactId>
-				<version>3.1.2</version>
-			</dependency>
-		<!-- <dependency> <groupId>org.eclipse.jetty.websocket</groupId> <artifactId>websocket-api</artifactId> 
-			<version>9.2.2.v20140723</version> </dependency> <dependency> <groupId>org.eclipse.jetty.websocket</groupId> 
-			<artifactId>websocket-server</artifactId> <version>9.2.2.v20140723</version> 
+			<groupId>org.ehcache</groupId>
+			<artifactId>ehcache</artifactId>
+			<version>3.1.2</version>
+		</dependency>
+		<!-- <dependency> <groupId>org.eclipse.jetty.websocket</groupId> <artifactId>websocket-api</artifactId>
+			<version>9.2.2.v20140723</version> </dependency> <dependency> <groupId>org.eclipse.jetty.websocket</groupId>
+			<artifactId>websocket-server</artifactId> <version>9.2.2.v20140723</version>
 			</dependency> -->
-		<!-- <dependency> <groupId>com.gbase.jdbc</groupId> <artifactId>gbase-connector-java</artifactId> 
+		<!-- <dependency> <groupId>com.gbase.jdbc</groupId> <artifactId>gbase-connector-java</artifactId>
 			<version>8.3.81.53</version> </dependency> -->
 
-		<!--lucene 核心包 
+		<!--lucene 核心包
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-core</artifactId>
@@ -258,14 +256,14 @@
 			<version>${lucene.version}</version>
 		</dependency>
 		 -->
-		<!--与查询比较的高性能单文档索引 高亮显示需要此jar 
+		<!--与查询比较的高性能单文档索引 高亮显示需要此jar
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-memory</artifactId>
 			<version>${lucene.version}</version>
 		</dependency>
 -->
-		<!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-queryparser 
+		<!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-queryparser
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-queryparser</artifactId>
@@ -279,14 +277,14 @@
 		</dependency>
 -->
 
-		<!--一般分词器，适用于英文分词 
+		<!--一般分词器，适用于英文分词
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-analyzers-common</artifactId>
 			<version>${lucene.version}</version>
 		</dependency>
 -->
-		<!--中文分词器 
+		<!--中文分词器
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-analyzers-smartcn</artifactId>
@@ -299,7 +297,7 @@
 			<artifactId>h2</artifactId>
 			<version>1.4.200</version>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-core</artifactId>
@@ -308,9 +306,9 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
-  			<artifactId>tomcat-embed-websocket</artifactId>
-  			<version>8.5.11</version>
-  			<scope>test</scope>
+			<artifactId>tomcat-embed-websocket</artifactId>
+			<version>8.5.11</version>
+			<scope>test</scope>
 		</dependency>
 
 
@@ -334,8 +332,8 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
-			<!-- <plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>aspectj-maven-plugin</artifactId> 
-				<version>1.5</version> <executions> <execution> <goals> <goal>compile</goal> 
+			<!-- <plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>aspectj-maven-plugin</artifactId>
+				<version>1.5</version> <executions> <execution> <goals> <goal>compile</goal>
 				<goal>test-compile</goal> </goals> </execution> </executions> </plugin> -->
 		</plugins>
 	</build>
