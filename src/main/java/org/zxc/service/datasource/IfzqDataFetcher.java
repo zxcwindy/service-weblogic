@@ -43,6 +43,9 @@ public class IfzqDataFetcher implements DataFetcher {
 		try {
 			data = (Map) mapper.readValue(result, Map.class).get("data");
 			List<List<Object>> resultList = (List<List<Object>>) ((Map)data.get(code)).get("qfq"+convertPeriod(period));
+			if(resultList == null) {
+				resultList = (List<List<Object>>) ((Map)data.get(code)).get(convertPeriod(period));
+			}
 			SimpleDateFormat sFormat = new SimpleDateFormat(dateFormat);
 			return resultList.stream().map(os -> {
 				try {

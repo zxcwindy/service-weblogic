@@ -180,11 +180,13 @@
 			<artifactId>aspectjrt</artifactId>
 			<version>1.7.2</version>
 		</dependency>
+		<!-- 
 		<dependency>
 			<groupId>joinery</groupId>
 			<artifactId>joinery-dataframe</artifactId>
 			<version>1.9</version>
 		</dependency>
+		 -->
 		<!-- <dependency> <groupId>com.ibm.db2java</groupId> <artifactId>db2java</artifactId>
 			<version>1.0.0</version> </dependency> <dependency> <groupId>com.ibm.db2jcc</groupId>
 			<artifactId>db2jcc</artifactId> <version>1.0.0</version> </dependency> <dependency>
@@ -296,6 +298,12 @@
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<version>1.4.200</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.baidu.aip</groupId>
+			<artifactId>java-sdk</artifactId>
+			<version>4.16.14</version>
 		</dependency>
 
 		<dependency>
