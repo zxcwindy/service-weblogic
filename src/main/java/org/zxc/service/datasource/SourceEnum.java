@@ -4,5 +4,6 @@ public enum SourceEnum {
 	BaoStock,
 	Sina,
 	Tushare,
-	Tencent
+	Tencent,
+	IFZQ
 }
