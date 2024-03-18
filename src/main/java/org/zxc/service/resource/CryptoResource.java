@@ -22,7 +22,7 @@ import com.asiainfo.dacp.crypto.cipher.Md5Crypto;
 @Controller
 @RequestMapping("/api/crypto")
 public class CryptoResource {
-	
+
 	/**
 	 * aes加密
 	 * @param data 需要加密的数据
@@ -40,7 +40,7 @@ public class CryptoResource {
 		}
 		return result;
 	}
-	
+
 	/**
 	 * aes解密
 	 * @param data 需要解密的数据
@@ -69,12 +69,12 @@ public class CryptoResource {
 	public String encryptMD5(@RequestParam String data) {
 		return Md5Crypto.encrypt(data);
 	}
-	
+
 	/**
 	 * base64加密服务
 	 * @param data 需要加密的数据
 	 * @return 加密后的数据
-	 * @throws UnsupportedEncodingException 
+	 * @throws UnsupportedEncodingException
 	 */
 	@RequestMapping(value= "/base64/encrypt",method = RequestMethod.GET)
 	@ResponseBody
@@ -82,12 +82,12 @@ public class CryptoResource {
 		byte[] b = Base64.encodeBase64(data.getBytes("utf-8"));
 		return new String(b, "utf-8");
 	}
-	
+
 	/**
 	 * base64解密服务
 	 * @param data 需要解密的数据
 	 * @return 解密后的数据
-	 * @throws UnsupportedEncodingException 
+	 * @throws UnsupportedEncodingException
 	 */
 	@RequestMapping(value= "/base64/decrypt",method = RequestMethod.GET)
 	@ResponseBody
@@ -95,7 +95,7 @@ public class CryptoResource {
 		byte[] b = Base64.decodeBase64(data);
 		return new String(b, "utf-8");
 	}
-	
+
 	/**
 	 * DES解密
 	 * @param data 需要解密的数据
@@ -112,5 +112,8 @@ public class CryptoResource {
 			result = DesCipher.decrypt(data,key);
 		}
 		return result;
+		// FwEncryptSecretPo po = new FwEncryptSecretPo("sys","DES","hQ+IGoGwjNHfDA9cVQ0DY2jviydppolN","KEY");
+
+		// String result = GlobalEncryptAlgorithm.getInstanceAndDecryptKey(List.of(po)).decrypt("RSbMorT5JLH24C+0sUBSjw==");
 	}
 }
